@@ -37,6 +37,7 @@ private val Orange = Color(0xFFFF6B2C)
 private val Blue = Color(0xFF2F6FED)
 private val Pale = Color(0xFFF7F8F5)
 private val Off = Color(0xFFE8ECE6)
+private val WeekdayOrder = listOf("월", "화", "수", "목", "금", "토", "일")
 
 @Composable
 fun TimePickerCard(
@@ -79,7 +80,10 @@ fun TimePickerCard(
                 ),
             )
         }
-        Text(days.joinToString(" "), style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp))
+        Text(
+            WeekdayOrder.filter { it in days }.joinToString(" "),
+            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+        )
     }
 }
 
@@ -193,7 +197,6 @@ fun RepeatScheduleCard(
     onDayClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val allDays = listOf("월", "화", "수", "목", "금", "토", "일")
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -213,7 +216,7 @@ fun RepeatScheduleCard(
             Text(weekdaySummary(selectedDays), color = Orange, style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.ExtraBold))
         }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            allDays.forEach { day ->
+            WeekdayOrder.forEach { day ->
                 val selected = day in selectedDays
                 Box(
                     modifier = Modifier
@@ -297,12 +300,12 @@ private fun weekdaySummary(days: List<String>): String = when {
     days == listOf("월", "화", "수", "목", "금") -> "평일"
     days.size == 7 -> "매일"
     days.isEmpty() -> "선택 안 함"
-    else -> days.joinToString(" ")
+    else -> WeekdayOrder.filter { it in days }.joinToString(" ")
 }
 
 private enum class IconType { Pin, Timer }
 
-@Preview @Composable private fun TimePickerCardPreview() = PreviewSurface { TimePickerCard("06:20", listOf("월", "화", "수", "목", "금"), {}) }
+@Preview @Composable private fun TimePickerCardPreview() = PreviewSurface { TimePickerCard("06:20", WeekdayOrder, {}) }
 @Preview @Composable private fun DestinationCardPreview() = PreviewSurface { DestinationCard("강남역 2번 출구", "서울 강남구 강남대로 지하 396", "현재 위치 기준 1.2 km", {}) }
 @Preview @Composable private fun LimitTimeCardPreview() = PreviewSurface { LimitTimeCard(12, {}) }
 @Preview @Composable private fun RepeatScheduleCardPreview() = PreviewSurface { RepeatScheduleCard(true, listOf("월", "화", "수", "목", "금"), {}, {}) }
