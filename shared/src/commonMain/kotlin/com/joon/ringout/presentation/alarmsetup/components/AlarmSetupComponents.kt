@@ -42,6 +42,8 @@ fun TimePickerCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val displayTime = time.toTwelveHourDisplay()
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -52,14 +54,48 @@ fun TimePickerCard(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text("알람 시각", style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp))
-        Text(
-            time,
-            color = PrimaryText,
-            style = MaterialTheme.typography.displayMedium.copy(fontSize = 56.sp, lineHeight = 64.sp, fontWeight = FontWeight.Bold),
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                text = displayTime.period,
+                color = SecondaryText,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                ),
+            )
+            Text(
+                text = displayTime.time,
+                color = PrimaryText,
+                style = MaterialTheme.typography.displayMedium.copy(
+                    fontSize = 56.sp,
+                    lineHeight = 64.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
+            )
+        }
         Text(days.joinToString(" "), style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp))
     }
 }
+
+private fun String.toTwelveHourDisplay(): TwelveHourDisplay {
+    val rawHour = substringBefore(":").toIntOrNull() ?: 0
+    val minute = substringAfter(":", "00").toIntOrNull()?.coerceIn(0, 59) ?: 0
+    val hour24 = ((rawHour % 24) + 24) % 24
+    val hour12 = (hour24 % 12).takeIf { it != 0 } ?: 12
+
+    return TwelveHourDisplay(
+        period = if (hour24 < 12) "오전" else "오후",
+        time = "${hour12.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}",
+    )
+}
+
+private data class TwelveHourDisplay(
+    val period: String,
+    val time: String,
+)
 
 @Composable
 fun DestinationCard(

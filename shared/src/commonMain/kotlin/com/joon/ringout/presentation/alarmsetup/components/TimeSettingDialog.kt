@@ -140,7 +140,7 @@ fun TimeSettingDialogContent(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             NumberPickerColumn(
-                label = "시간",
+                label = "시",
                 values = HourValues,
                 selected = hour,
                 onValueChange = onHourChange,
