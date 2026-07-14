@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -27,6 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.joon.ringout.RingoutTheme
+import kotlin.math.roundToInt
 
 private val PrimaryText = Color(0xFF161A17)
 private val SecondaryText = Color(0xFF6E756F)
@@ -138,7 +141,14 @@ fun DestinationCard(
 
 @Composable
 fun LimitTimeCard(minutes: Int, onMinutesChange: (Int) -> Unit, modifier: Modifier = Modifier) {
-    val values = listOf(8, 10, 12, 16, 20)
+    val sliderMinutes = minutes.coerceIn(1, 30)
+    val sliderColors = SliderDefaults.colors(
+        thumbColor = Blue,
+        activeTrackColor = Blue,
+        inactiveTrackColor = Off,
+        activeTickColor = Color.Transparent,
+        inactiveTickColor = Color.Transparent,
+    )
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -150,23 +160,27 @@ fun LimitTimeCard(minutes: Int, onMinutesChange: (Int) -> Unit, modifier: Modifi
             FeatureIcon(Blue, IconType.Timer)
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Label("제한 시간")
-                Text("${minutes}분", color = PrimaryText, style = MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp, fontWeight = FontWeight.Bold))
+                Text("${sliderMinutes}분", color = PrimaryText, style = MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp, fontWeight = FontWeight.Bold))
             }
         }
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-            values.forEach { value ->
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .height(if (value <= minutes) 6.dp else 4.dp)
-                        .background(if (value <= minutes) Blue else Off, CircleShape)
-                        .clickable { onMinutesChange(value) },
+        Slider(
+            value = sliderMinutes.toFloat(),
+            onValueChange = { value -> onMinutesChange(value.roundToInt().coerceIn(1, 30)) },
+            modifier = Modifier.fillMaxWidth(),
+            valueRange = 1f..30f,
+            steps = 28,
+            colors = sliderColors,
+            track = { sliderState ->
+                SliderDefaults.Track(
+                    sliderState = sliderState,
+                    colors = sliderColors,
+                    drawStopIndicator = null,
                 )
-            }
-        }
+            },
+        )
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Caption("8분")
-            Caption("20분")
+            Caption("1분")
+            Caption("30분")
         }
     }
 }
