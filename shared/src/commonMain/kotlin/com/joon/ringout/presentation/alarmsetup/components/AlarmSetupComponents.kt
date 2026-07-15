@@ -81,7 +81,7 @@ fun TimePickerCard(
             )
         }
         Text(
-            WeekdayOrder.filter { it in days }.joinToString(" "),
+            weekdaySummary(days),
             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
         )
     }
@@ -296,10 +296,11 @@ private fun CheckIcon() = Canvas(Modifier.padding(end = 10.dp).size(22.dp)) {
 @Composable private fun Label(text: String) = Text(text, color = SecondaryText, style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
 @Composable private fun Caption(text: String) = Text(text, color = SecondaryText, style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold))
 
-private fun weekdaySummary(days: List<String>): String = when {
-    days == listOf("월", "화", "수", "목", "금") -> "평일"
-    days.size == 7 -> "매일"
-    days.isEmpty() -> "선택 안 함"
+internal fun weekdaySummary(days: List<String>): String = when (days.toSet()) {
+    setOf("월", "화", "수", "목", "금") -> "평일"
+    setOf("토", "일") -> "주말"
+    WeekdayOrder.toSet() -> "매일"
+    emptySet<String>() -> "선택 안 함"
     else -> WeekdayOrder.filter { it in days }.joinToString(" ")
 }
 

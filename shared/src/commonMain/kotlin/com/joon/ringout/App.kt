@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.joon.ringout.presentation.alarmsetup.AlarmSetupScreen
+import com.joon.ringout.presentation.alarmsetup.components.weekdaySummary
 import com.joon.ringout.presentation.destination.DefaultDestinationSelection
 import com.joon.ringout.presentation.destination.DestinationMapScreen
 import com.joon.ringout.presentation.destination.DestinationSelection
@@ -60,7 +61,7 @@ fun App() {
                         alarms = alarms + HomeAlarm(
                             id = "alarm-${alarms.size + 1}",
                             time = time,
-                            days = selectedDays.joinToString(" "),
+                            days = weekdaySummary(selectedDays),
                             destination = destination.name,
                             timeLimitMinutes = limitMinutes,
                             isEnabled = true,
