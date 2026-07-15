@@ -23,7 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,16 +45,18 @@ import com.joon.ringout.presentation.alarmsetup.components.TimeSettingDialog
 @Composable
 fun AlarmSetupScreen(
     destination: String,
+    destinationAddress: String,
     onBackClick: () -> Unit,
     onDestinationClick: () -> Unit,
     onSaveClick: (time: String, selectedDays: List<String>, limitMinutes: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var limitMinutes by remember { mutableStateOf(12) }
-    var repeatEnabled by remember { mutableStateOf(true) }
-    var selectedDays by remember { mutableStateOf(listOf("월", "화", "수", "목", "금")) }
-    var alarmTime by remember { mutableStateOf("06:20") }
-    var showTimeDialog by remember { mutableStateOf(false) }
+    var limitMinutes by rememberSaveable { mutableStateOf(12) }
+    var repeatEnabled by rememberSaveable { mutableStateOf(true) }
+    var selectedDaysValue by rememberSaveable { mutableStateOf("월,화,수,목,금") }
+    var alarmTime by rememberSaveable { mutableStateOf("06:20") }
+    var showTimeDialog by rememberSaveable { mutableStateOf(false) }
+    val selectedDays = selectedDaysValue.split(",").filter(String::isNotBlank)
 
     if (showTimeDialog) {
         TimeSettingDialog(
@@ -88,8 +90,8 @@ fun AlarmSetupScreen(
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 DestinationCard(
                     destination = destination,
-                    address = "서울 강남구 강남대로 지하 396",
-                    distance = "현재 위치 기준 1.2 km",
+                    address = destinationAddress,
+                    distance = "지도를 눌러 목표 지점을 변경할 수 있어요",
                     onClick = onDestinationClick,
                 )
                 LimitTimeCard(
@@ -102,7 +104,9 @@ fun AlarmSetupScreen(
                 selectedDays = selectedDays,
                 onRepeatEnabledChange = { repeatEnabled = it },
                 onDayClick = { day ->
-                    selectedDays = if (day in selectedDays) selectedDays - day else selectedDays + day
+                    selectedDaysValue = (
+                        if (day in selectedDays) selectedDays - day else selectedDays + day
+                    ).joinToString(",")
                 },
             )
         }
@@ -163,6 +167,7 @@ private fun AlarmSetupScreenPreview() {
     RingoutTheme {
         AlarmSetupScreen(
             destination = "강남역 2번 출구",
+            destinationAddress = "서울 강남구 강남대로 지하 396",
             onBackClick = {},
             onDestinationClick = {},
             onSaveClick = { _, _, _ -> },

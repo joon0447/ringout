@@ -31,6 +31,9 @@ data class HomeAlarm(
     val destination: String,
     val timeLimitMinutes: Int,
     val isEnabled: Boolean,
+    val targetAddress: String = "",
+    val targetLatitude: Double? = null,
+    val targetLongitude: Double? = null,
 )
 
 @Composable
