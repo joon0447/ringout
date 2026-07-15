@@ -190,6 +190,45 @@ fun LimitTimeCard(minutes: Int, onMinutesChange: (Int) -> Unit, modifier: Modifi
 }
 
 @Composable
+fun AlarmSoundCard(
+    soundName: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Color.White, RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        FeatureIcon(Orange, IconType.Sound)
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+            Label("알람음")
+            Text(
+                text = soundName,
+                color = PrimaryText,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                ),
+            )
+            Text(
+                text = "눌러서 알람음을 변경하세요",
+                color = SecondaryText,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+            )
+        }
+        ChevronRight()
+    }
+}
+
+@Composable
 fun RepeatScheduleCard(
     repeatEnabled: Boolean,
     selectedDays: List<String>,
@@ -260,13 +299,25 @@ private fun FeatureIcon(color: Color, type: IconType) {
 private fun FeatureGlyph(color: Color, type: IconType, modifier: Modifier = Modifier) {
     Canvas(modifier) {
         val stroke = 1.6.dp.toPx()
-        if (type == IconType.Pin) {
-            drawCircle(color, size.minDimension * .2f, Offset(size.width / 2, size.height * .4f), style = androidx.compose.ui.graphics.drawscope.Stroke(stroke))
-            drawLine(color, Offset(size.width / 2, size.height * .6f), Offset(size.width / 2, size.height * .86f), stroke, StrokeCap.Round)
-        } else {
-            drawCircle(color, size.minDimension * .34f, Offset(size.width / 2, size.height * .55f), style = androidx.compose.ui.graphics.drawscope.Stroke(stroke))
-            drawLine(color, Offset(size.width / 2, size.height * .1f), Offset(size.width / 2, size.height * .25f), stroke, StrokeCap.Round)
-            drawLine(color, Offset(size.width * .38f, size.height * .1f), Offset(size.width * .62f, size.height * .1f), stroke, StrokeCap.Round)
+        when (type) {
+            IconType.Pin -> {
+                drawCircle(color, size.minDimension * .2f, Offset(size.width / 2, size.height * .4f), style = androidx.compose.ui.graphics.drawscope.Stroke(stroke))
+                drawLine(color, Offset(size.width / 2, size.height * .6f), Offset(size.width / 2, size.height * .86f), stroke, StrokeCap.Round)
+            }
+            IconType.Timer -> {
+                drawCircle(color, size.minDimension * .34f, Offset(size.width / 2, size.height * .55f), style = androidx.compose.ui.graphics.drawscope.Stroke(stroke))
+                drawLine(color, Offset(size.width / 2, size.height * .1f), Offset(size.width / 2, size.height * .25f), stroke, StrokeCap.Round)
+                drawLine(color, Offset(size.width * .38f, size.height * .1f), Offset(size.width * .62f, size.height * .1f), stroke, StrokeCap.Round)
+            }
+            IconType.Sound -> {
+                drawLine(color, Offset(size.width * .18f, size.height * .42f), Offset(size.width * .38f, size.height * .42f), stroke, StrokeCap.Round)
+                drawLine(color, Offset(size.width * .18f, size.height * .42f), Offset(size.width * .18f, size.height * .68f), stroke, StrokeCap.Round)
+                drawLine(color, Offset(size.width * .18f, size.height * .68f), Offset(size.width * .38f, size.height * .68f), stroke, StrokeCap.Round)
+                drawLine(color, Offset(size.width * .38f, size.height * .42f), Offset(size.width * .58f, size.height * .24f), stroke, StrokeCap.Round)
+                drawLine(color, Offset(size.width * .58f, size.height * .24f), Offset(size.width * .58f, size.height * .86f), stroke, StrokeCap.Round)
+                drawLine(color, Offset(size.width * .58f, size.height * .86f), Offset(size.width * .38f, size.height * .68f), stroke, StrokeCap.Round)
+                drawArc(color, -55f, 110f, false, Offset(size.width * .55f, size.height * .35f), androidx.compose.ui.geometry.Size(size.width * .32f, size.height * .4f), style = androidx.compose.ui.graphics.drawscope.Stroke(stroke, cap = StrokeCap.Round))
+            }
         }
     }
 }
@@ -304,11 +355,12 @@ internal fun weekdaySummary(days: List<String>): String = when (days.toSet()) {
     else -> WeekdayOrder.filter { it in days }.joinToString(" ")
 }
 
-private enum class IconType { Pin, Timer }
+private enum class IconType { Pin, Timer, Sound }
 
 @Preview @Composable private fun TimePickerCardPreview() = PreviewSurface { TimePickerCard("06:20", WeekdayOrder, {}) }
 @Preview @Composable private fun DestinationCardPreview() = PreviewSurface { DestinationCard("강남역 2번 출구", "서울 강남구 강남대로 지하 396", "현재 위치 기준 1.2 km", {}) }
 @Preview @Composable private fun LimitTimeCardPreview() = PreviewSurface { LimitTimeCard(12, {}) }
+@Preview @Composable private fun AlarmSoundCardPreview() = PreviewSurface { AlarmSoundCard("Morning Flower", {}) }
 @Preview @Composable private fun RepeatScheduleCardPreview() = PreviewSurface { RepeatScheduleCard(true, listOf("월", "화", "수", "목", "금"), {}, {}) }
 @Preview @Composable private fun SaveAlarmButtonPreview() = PreviewSurface { SaveAlarmButton({}) }
 

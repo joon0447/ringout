@@ -34,6 +34,8 @@ data class HomeAlarm(
     val targetAddress: String = "",
     val targetLatitude: Double? = null,
     val targetLongitude: Double? = null,
+    val alarmSoundName: String = "기본 알람음",
+    val alarmSoundUri: String? = null,
 )
 
 @Composable

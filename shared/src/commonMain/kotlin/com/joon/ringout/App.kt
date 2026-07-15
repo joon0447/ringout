@@ -57,7 +57,7 @@ fun App() {
                     destinationAddress = destination.address,
                     onBackClick = { screenName = AppScreen.Home.name },
                     onDestinationClick = { screenName = AppScreen.Destination.name },
-                    onSaveClick = { time, selectedDays, limitMinutes ->
+                    onSaveClick = { time, selectedDays, limitMinutes, alarmSound ->
                         alarms = alarms + HomeAlarm(
                             id = "alarm-${alarms.size + 1}",
                             time = time,
@@ -68,6 +68,8 @@ fun App() {
                             targetAddress = destination.address,
                             targetLatitude = destination.latitude,
                             targetLongitude = destination.longitude,
+                            alarmSoundName = alarmSound.name,
+                            alarmSoundUri = alarmSound.uri,
                         )
                         screenName = AppScreen.Home.name
                     },

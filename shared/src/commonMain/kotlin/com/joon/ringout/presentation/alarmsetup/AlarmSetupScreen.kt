@@ -39,6 +39,7 @@ import com.joon.ringout.presentation.alarmsetup.components.DestinationCard
 import com.joon.ringout.presentation.alarmsetup.components.LimitTimeCard
 import com.joon.ringout.presentation.alarmsetup.components.RepeatScheduleCard
 import com.joon.ringout.presentation.alarmsetup.components.SaveAlarmButton
+import com.joon.ringout.presentation.alarmsetup.components.AlarmSoundCard
 import com.joon.ringout.presentation.alarmsetup.components.TimePickerCard
 import com.joon.ringout.presentation.alarmsetup.components.TimeSettingDialog
 
@@ -48,7 +49,12 @@ fun AlarmSetupScreen(
     destinationAddress: String,
     onBackClick: () -> Unit,
     onDestinationClick: () -> Unit,
-    onSaveClick: (time: String, selectedDays: List<String>, limitMinutes: Int) -> Unit,
+    onSaveClick: (
+        time: String,
+        selectedDays: List<String>,
+        limitMinutes: Int,
+        alarmSound: AlarmSoundSelection,
+    ) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var limitMinutes by rememberSaveable { mutableStateOf(12) }
@@ -56,7 +62,16 @@ fun AlarmSetupScreen(
     var selectedDaysValue by rememberSaveable { mutableStateOf("월,화,수,목,금") }
     var alarmTime by rememberSaveable { mutableStateOf("06:20") }
     var showTimeDialog by rememberSaveable { mutableStateOf(false) }
+    var alarmSoundName by rememberSaveable { mutableStateOf("기본 알람음") }
+    var alarmSoundUri by rememberSaveable { mutableStateOf<String?>(null) }
     val selectedDays = selectedDaysValue.split(",").filter(String::isNotBlank)
+    val openAlarmSoundPicker = rememberAlarmSoundPicker(
+        currentSoundUri = alarmSoundUri,
+        onSoundSelected = { selection ->
+            alarmSoundName = selection.name
+            alarmSoundUri = selection.uri
+        },
+    )
 
     if (showTimeDialog) {
         TimeSettingDialog(
@@ -98,6 +113,10 @@ fun AlarmSetupScreen(
                     minutes = limitMinutes,
                     onMinutesChange = { limitMinutes = it },
                 )
+                AlarmSoundCard(
+                    soundName = alarmSoundName,
+                    onClick = openAlarmSoundPicker,
+                )
             }
             RepeatScheduleCard(
                 repeatEnabled = repeatEnabled,
@@ -115,7 +134,16 @@ fun AlarmSetupScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            SaveAlarmButton(onClick = { onSaveClick(alarmTime, selectedDays, limitMinutes) })
+            SaveAlarmButton(
+                onClick = {
+                    onSaveClick(
+                        alarmTime,
+                        selectedDays,
+                        limitMinutes,
+                        AlarmSoundSelection(alarmSoundName, alarmSoundUri),
+                    )
+                },
+            )
             Text(
                 text = "실패하면 알람이 다시 울리고 미션이 새로 시작돼요.",
                 modifier = Modifier.fillMaxWidth(),
@@ -170,7 +198,7 @@ private fun AlarmSetupScreenPreview() {
             destinationAddress = "서울 강남구 강남대로 지하 396",
             onBackClick = {},
             onDestinationClick = {},
-            onSaveClick = { _, _, _ -> },
+            onSaveClick = { _, _, _, _ -> },
         )
     }
 }
