@@ -30,6 +30,9 @@ actual fun rememberAlarmController(
 ): AlarmController {
     val context = LocalContext.current
     val scheduler = remember(context) { AndroidAlarmScheduler(context.applicationContext) }
+    val permissionPreferences = remember(context) {
+        context.getSharedPreferences(PERMISSION_PREFERENCES_NAME, Context.MODE_PRIVATE)
+    }
     val pendingRequest = remember { mutableStateOf<AlarmScheduleRequest?>(null) }
     val currentOnScheduled = rememberUpdatedState(onScheduled)
     val currentOnError = rememberUpdatedState(onError)
@@ -132,7 +135,16 @@ actual fun rememberAlarmController(
             },
             savedAlarms = scheduler.loadAll(),
             ensureFullScreenAccess = {
-                if (!Settings.canDrawOverlays(context)) {
+                val hasRequestedOnFirstLaunch = permissionPreferences.getBoolean(
+                    KEY_INITIAL_OVERLAY_PERMISSION_REQUESTED,
+                    false,
+                )
+                if (!hasRequestedOnFirstLaunch) {
+                    permissionPreferences.edit()
+                        .putBoolean(KEY_INITIAL_OVERLAY_PERMISSION_REQUESTED, true)
+                        .apply()
+                }
+                if (!hasRequestedOnFirstLaunch && !Settings.canDrawOverlays(context)) {
                     overlayPermissionLauncher.launch(overlayPermissionIntent(context))
                 }
             },
@@ -158,6 +170,9 @@ private fun overlayPermissionIntent(context: Context): Intent =
     Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
         data = Uri.parse("package:${context.packageName}")
     }
+
+private const val PERMISSION_PREFERENCES_NAME = "ringout_permission_prompts"
+private const val KEY_INITIAL_OVERLAY_PERMISSION_REQUESTED = "initial_overlay_permission_requested"
 
 internal class AndroidAlarmScheduler(private val context: Context) {
     private val alarmManager = context.getSystemService(AlarmManager::class.java)

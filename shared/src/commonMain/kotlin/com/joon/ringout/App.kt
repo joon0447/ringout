@@ -58,9 +58,7 @@ fun App() {
                     saved.request.toHomeAlarm(enabled = saved.enabled)
                 }
             }
-            if (alarmController.savedAlarms.any { it.enabled }) {
-                alarmController.ensureFullScreenAccess()
-            }
+            alarmController.ensureFullScreenAccess()
         }
 
         if (alarmScheduleError != null) {
