@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 expect fun PlatformDestinationMap(
     initialLatitude: Double,
     initialLongitude: Double,
+    cameraTarget: DestinationSelection?,
     onCameraMoveStarted: () -> Unit,
     onCameraIdle: (
         latitude: Double,
@@ -16,4 +17,13 @@ expect fun PlatformDestinationMap(
     ) -> Unit,
     onMapError: (String) -> Unit,
     modifier: Modifier = Modifier,
+)
+
+@Composable
+expect fun PlatformDestinationSearchEffect(
+    query: String?,
+    requestId: Int,
+    onLoadingChange: (Boolean) -> Unit,
+    onResults: (List<DestinationSelection>) -> Unit,
+    onError: (String) -> Unit,
 )

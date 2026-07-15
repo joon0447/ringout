@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -14,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 actual fun PlatformDestinationMap(
     initialLatitude: Double,
     initialLongitude: Double,
+    cameraTarget: DestinationSelection?,
     onCameraMoveStarted: () -> Unit,
     onCameraIdle: (
         latitude: Double,
@@ -35,5 +37,18 @@ actual fun PlatformDestinationMap(
             color = Color(0xFF6E756F),
             style = MaterialTheme.typography.bodyMedium,
         )
+    }
+}
+
+@Composable
+actual fun PlatformDestinationSearchEffect(
+    query: String?,
+    requestId: Int,
+    onLoadingChange: (Boolean) -> Unit,
+    onResults: (List<DestinationSelection>) -> Unit,
+    onError: (String) -> Unit,
+) {
+    LaunchedEffect(query, requestId) {
+        if (!query.isNullOrBlank()) onError("주소 검색은 현재 Android에서 지원됩니다.")
     }
 }
