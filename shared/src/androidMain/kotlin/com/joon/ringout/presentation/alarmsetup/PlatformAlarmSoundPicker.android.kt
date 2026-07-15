@@ -26,6 +26,14 @@ actual fun rememberAlarmSoundPicker(
         @Suppress("DEPRECATION")
         val selectedUri = result.data
             ?.getParcelableExtra<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+        selectedUri?.let { uri ->
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+            }
+        }
         val soundName = selectedUri?.let { uri ->
             runCatching {
                 RingtoneManager.getRingtone(context, uri)?.getTitle(context)
@@ -48,6 +56,10 @@ actual fun rememberAlarmSoundPicker(
             }
             launcher.launch(
                 Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                    addFlags(
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                            Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION,
+                    )
                     putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
                     putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "알람음 선택")
                     putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)

@@ -36,6 +36,8 @@ data class HomeAlarm(
     val targetLongitude: Double? = null,
     val alarmSoundName: String = "기본 알람음",
     val alarmSoundUri: String? = null,
+    val selectedDays: List<String> = emptyList(),
+    val repeatEnabled: Boolean = true,
 )
 
 @Composable

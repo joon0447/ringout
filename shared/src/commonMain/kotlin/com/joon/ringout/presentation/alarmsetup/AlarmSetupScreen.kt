@@ -52,6 +52,7 @@ fun AlarmSetupScreen(
     onSaveClick: (
         time: String,
         selectedDays: List<String>,
+        repeatEnabled: Boolean,
         limitMinutes: Int,
         alarmSound: AlarmSoundSelection,
     ) -> Unit,
@@ -139,6 +140,7 @@ fun AlarmSetupScreen(
                     onSaveClick(
                         alarmTime,
                         selectedDays,
+                        repeatEnabled,
                         limitMinutes,
                         AlarmSoundSelection(alarmSoundName, alarmSoundUri),
                     )
@@ -198,7 +200,7 @@ private fun AlarmSetupScreenPreview() {
             destinationAddress = "서울 강남구 강남대로 지하 396",
             onBackClick = {},
             onDestinationClick = {},
-            onSaveClick = { _, _, _, _ -> },
+            onSaveClick = { _, _, _, _, _ -> },
         )
     }
 }
