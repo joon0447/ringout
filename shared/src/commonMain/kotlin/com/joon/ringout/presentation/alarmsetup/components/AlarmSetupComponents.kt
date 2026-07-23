@@ -1,175 +1,437 @@
 package com.joon.ringout.presentation.alarmsetup.components
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.joon.ringout.LocalRingoutThemeMode
 import com.joon.ringout.RingoutTheme
+import com.joon.ringout.ThemeMode
 import com.joon.ringout.presentation.toTwelveHourDisplay
 import kotlin.math.roundToInt
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.painterResource
+import ringout.shared.generated.resources.Res
+import ringout.shared.generated.resources.alarm_setup_back_dark
+import ringout.shared.generated.resources.alarm_setup_back_light
+import ringout.shared.generated.resources.alarm_setup_chevron_dark
+import ringout.shared.generated.resources.alarm_setup_chevron_light
+import ringout.shared.generated.resources.alarm_setup_pin
+import ringout.shared.generated.resources.alarm_setup_sound
+import ringout.shared.generated.resources.alarm_setup_thumb_dark
+import ringout.shared.generated.resources.alarm_setup_thumb_light
 
-private val PrimaryText = Color(0xFF161A17)
-private val SecondaryText = Color(0xFF6E756F)
-private val Orange = Color(0xFFFF6B2C)
-private val Blue = Color(0xFF2F6FED)
-private val Pale = Color(0xFFF7F8F5)
-private val Off = Color(0xFFE8ECE6)
+private val RingoutOrange = Color(0xFFFF6D2E)
 private val WeekdayOrder = listOf("월", "화", "수", "목", "금", "토", "일")
+
+internal data class AlarmSetupColors(
+    val background: Color,
+    val primaryText: Color,
+    val sectionLabel: Color,
+    val supportingText: Color,
+    val timeCard: Color,
+    val unselectedDayBackground: Color,
+    val unselectedDayText: Color,
+    val inactiveTrack: Color,
+    val backIcon: DrawableResource,
+    val chevronIcon: DrawableResource,
+    val sliderThumb: DrawableResource,
+)
+
+@Composable
+internal fun alarmSetupColors(): AlarmSetupColors =
+    if (LocalRingoutThemeMode.current == ThemeMode.Dark) {
+        AlarmSetupColors(
+            background = Color.Black,
+            primaryText = Color.White,
+            sectionLabel = Color(0xFF8C8C8C),
+            supportingText = Color(0xFF8C8C8C),
+            timeCard = Color.Black,
+            unselectedDayBackground = Color(0xFF8C8C8C),
+            unselectedDayText = Color.White,
+            inactiveTrack = Color(0xFF8C8C8C),
+            backIcon = Res.drawable.alarm_setup_back_dark,
+            chevronIcon = Res.drawable.alarm_setup_chevron_dark,
+            sliderThumb = Res.drawable.alarm_setup_thumb_dark,
+        )
+    } else {
+        AlarmSetupColors(
+            background = Color.White,
+            primaryText = Color(0xFF111827),
+            sectionLabel = Color(0xFF374151),
+            supportingText = Color(0xFF6B7280),
+            timeCard = Color(0xFFF5F5F5),
+            unselectedDayBackground = Color(0xFFE5E7EB),
+            unselectedDayText = Color(0xFF111827),
+            inactiveTrack = Color(0xFFE5E7EB),
+            backIcon = Res.drawable.alarm_setup_back_light,
+            chevronIcon = Res.drawable.alarm_setup_chevron_light,
+            sliderThumb = Res.drawable.alarm_setup_thumb_light,
+        )
+    }
+
+@Composable
+fun SetupBackButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = alarmSetupColors()
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(41.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Box(
+            modifier = Modifier
+                .requiredSize(44.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .clickable(
+                    role = Role.Button,
+                    onClickLabel = "이전 화면으로 이동",
+                    onClick = onClick,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter = painterResource(colors.backIcon),
+                contentDescription = "뒤로",
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
+}
 
 @Composable
 fun TimePickerCard(
     time: String,
-    days: List<String>,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val colors = alarmSetupColors()
     val displayTime = time.toTwelveHourDisplay()
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color.White, RoundedCornerShape(24.dp))
-            .clickable(onClick = onClick)
-            .padding(22.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .height(149.dp)
+            .clip(RoundedCornerShape(15.dp))
+            .background(colors.timeCard)
+            .clickable(
+                role = Role.Button,
+                onClickLabel = "알람 시간 변경",
+                onClick = onClick,
+            ),
+        contentAlignment = Alignment.Center,
     ) {
-        Text("알람 시각", style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp))
         Row(
-            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = displayTime.period,
-                color = SecondaryText,
+                color = colors.supportingText,
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.ExtraBold,
+                    lineHeight = 22.sp,
+                    fontWeight = FontWeight.Medium,
                 ),
             )
             Text(
                 text = displayTime.time,
-                color = PrimaryText,
-                style = MaterialTheme.typography.displayMedium.copy(
-                    fontSize = 56.sp,
-                    lineHeight = 64.sp,
+                color = colors.primaryText,
+                maxLines = 1,
+                style = MaterialTheme.typography.displayLarge.copy(
+                    fontSize = 72.sp,
+                    lineHeight = 77.sp,
                     fontWeight = FontWeight.Bold,
                 ),
             )
         }
-        Text(
-            weekdaySummary(days),
-            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-        )
+    }
+}
+
+@Composable
+fun WeekdaySelector(
+    selectedDays: List<String>,
+    onDayClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = alarmSetupColors()
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(95.dp)
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        SectionLabel("요일", colors.sectionLabel)
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(51.dp)
+                .padding(horizontal = 10.dp),
+        ) {
+            val idealChipWidth = 37.dp
+            val daySpacing = (
+                (maxWidth - idealChipWidth * WeekdayOrder.size) /
+                    (WeekdayOrder.size - 1)
+            ).coerceIn(4.dp, 10.dp)
+            val chipWidth = minOf(
+                idealChipWidth,
+                (maxWidth - daySpacing * (WeekdayOrder.size - 1)) /
+                    WeekdayOrder.size,
+            )
+
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.spacedBy(daySpacing),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                WeekdayOrder.forEach { day ->
+                    val selected = day in selectedDays
+                    Box(
+                        modifier = Modifier
+                            .width(chipWidth)
+                            .fillMaxHeight()
+                            .toggleable(
+                                value = selected,
+                                role = Role.Checkbox,
+                                onValueChange = { onDayClick(day) },
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(width = chipWidth, height = 32.dp)
+                                .background(
+                                    color = if (selected) {
+                                        RingoutOrange
+                                    } else {
+                                        colors.unselectedDayBackground
+                                    },
+                                    shape = RoundedCornerShape(5.dp),
+                                ),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = day,
+                                color = if (selected) {
+                                    Color.White
+                                } else {
+                                    colors.unselectedDayText
+                                },
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontSize = 18.sp,
+                                    lineHeight = 22.sp,
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
 @Composable
 fun DestinationCard(
     destination: String,
-    address: String,
-    distance: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val colors = alarmSetupColors()
+
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color.White, RoundedCornerShape(18.dp))
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .height(123.dp)
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            FeatureIcon(Orange, IconType.Pin)
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Label("목표 지점")
-                Text(destination, color = PrimaryText, style = MaterialTheme.typography.titleLarge.copy(fontSize = 21.sp, fontWeight = FontWeight.Bold))
-            }
-            ChevronRight()
-        }
+        SectionLabel("목적지", colors.sectionLabel)
+        SupportingLabel(
+            text = "알람을 끄고 이동할 곳을 선택해주세요",
+            color = colors.supportingText,
+        )
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Pale, RoundedCornerShape(12.dp))
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .height(55.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .clickable(
+                    role = Role.Button,
+                    onClickLabel = "목적지 변경",
+                    onClick = onClick,
+                )
+                .padding(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            FeatureGlyph(SecondaryText, IconType.Pin, Modifier.size(16.dp))
-            Text(address, modifier = Modifier.weight(1f), color = PrimaryText, style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, fontWeight = FontWeight.Medium))
+            Box(
+                modifier = Modifier.size(24.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.alarm_setup_pin),
+                    contentDescription = null,
+                    modifier = Modifier.size(width = 18.dp, height = 22.dp),
+                )
+            }
+            Text(
+                text = destination,
+                modifier = Modifier.weight(1f),
+                color = colors.primaryText,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = 18.sp,
+                    lineHeight = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
+            )
+            Image(
+                painter = painterResource(colors.chevronIcon),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(width = 12.dp, height = 17.dp)
+                    .graphicsLayer { scaleX = -1f },
+            )
         }
-        Text(distance, color = SecondaryText, style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold))
     }
 }
 
 @Composable
-fun LimitTimeCard(minutes: Int, onMinutesChange: (Int) -> Unit, modifier: Modifier = Modifier) {
-    val sliderMinutes = minutes.coerceIn(1, 30)
-    val sliderColors = SliderDefaults.colors(
-        thumbColor = Blue,
-        activeTrackColor = Blue,
-        inactiveTrackColor = Off,
-        activeTickColor = Color.Transparent,
-        inactiveTickColor = Color.Transparent,
-    )
+fun LimitTimeCard(
+    minutes: Int,
+    onMinutesChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = alarmSetupColors()
+    val sliderMinutes = minutes.coerceIn(MinLimitMinutes, MaxLimitMinutes)
+    val progress =
+        (sliderMinutes - MinLimitMinutes).toFloat() /
+            (MaxLimitMinutes - MinLimitMinutes).toFloat()
+
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color.White, RoundedCornerShape(18.dp))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .height(159.dp)
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            FeatureIcon(Blue, IconType.Timer)
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Label("제한 시간")
-                Text("${sliderMinutes}분", color = PrimaryText, style = MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp, fontWeight = FontWeight.Bold))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(89.dp)
+                .padding(vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                SectionLabel("제한 시간", colors.sectionLabel)
+                SupportingLabel(
+                    text = "목적지까지 이동할 제한 시간을 설정해주세요",
+                    color = colors.supportingText,
+                )
             }
+            Text(
+                text = "${sliderMinutes}분",
+                color = RingoutOrange,
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontSize = 28.sp,
+                    lineHeight = 34.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
+            )
         }
         Slider(
             value = sliderMinutes.toFloat(),
-            onValueChange = { value -> onMinutesChange(value.roundToInt().coerceIn(1, 30)) },
-            modifier = Modifier.fillMaxWidth(),
-            valueRange = 1f..30f,
-            steps = 28,
-            colors = sliderColors,
-            track = { sliderState ->
-                SliderDefaults.Track(
-                    sliderState = sliderState,
-                    colors = sliderColors,
-                    drawStopIndicator = null,
+            onValueChange = { value ->
+                onMinutesChange(
+                    value.roundToInt().coerceIn(MinLimitMinutes, MaxLimitMinutes),
                 )
             },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(40.dp),
+            valueRange = MinLimitMinutes.toFloat()..MaxLimitMinutes.toFloat(),
+            steps = MaxLimitMinutes - MinLimitMinutes - 1,
+            thumb = {
+                Image(
+                    painter = painterResource(colors.sliderThumb),
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                )
+            },
+            track = {
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(10.dp),
+                ) {
+                    val trackSlotWidth = maxWidth
+                    val fullTrackWidth = trackSlotWidth + SliderThumbSize
+                    Box(
+                        modifier = Modifier
+                            .requiredWidth(fullTrackWidth)
+                            .fillMaxHeight()
+                            .background(
+                                color = colors.inactiveTrack,
+                                shape = RoundedCornerShape(15.dp),
+                            ),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(SliderThumbRadius + trackSlotWidth * progress)
+                                .fillMaxHeight()
+                                .background(
+                                    color = RingoutOrange,
+                                    shape = RoundedCornerShape(15.dp),
+                                ),
+                        )
+                    }
+                }
+            },
         )
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Caption("1분")
-            Caption("30분")
-        }
     }
 }
 
@@ -179,178 +441,176 @@ fun AlarmSoundCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(Color.White, RoundedCornerShape(18.dp))
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        FeatureIcon(Orange, IconType.Sound)
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(3.dp),
-        ) {
-            Label("알람음")
-            Text(
-                text = soundName,
-                color = PrimaryText,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                ),
-            )
-            Text(
-                text = "눌러서 알람음을 변경하세요",
-                color = SecondaryText,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-            )
-        }
-        ChevronRight()
-    }
-}
+    val colors = alarmSetupColors()
 
-@Composable
-fun RepeatScheduleCard(
-    repeatEnabled: Boolean,
-    selectedDays: List<String>,
-    onRepeatEnabledChange: (Boolean) -> Unit,
-    onDayClick: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color.White, RoundedCornerShape(18.dp))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+            .height(99.dp)
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Label("반복")
-                Text("선택한 요일마다 반복", color = PrimaryText, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp, fontWeight = FontWeight.ExtraBold))
+        SectionLabel("알람음", colors.sectionLabel)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(55.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .clickable(
+                    role = Role.Button,
+                    onClickLabel = "알람음 변경",
+                    onClick = onClick,
+                )
+                .padding(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier.size(24.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.alarm_setup_sound),
+                    contentDescription = null,
+                    modifier = Modifier.size(width = 22.dp, height = 22.dp),
+                )
             }
-            Toggle(repeatEnabled) { onRepeatEnabledChange(!repeatEnabled) }
-        }
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Label("요일")
-            Text(weekdaySummary(selectedDays), color = Orange, style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.ExtraBold))
-        }
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            WeekdayOrder.forEach { day ->
-                val selected = day in selectedDays
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(40.dp)
-                        .background(if (selected) Orange else Off, RoundedCornerShape(14.dp))
-                        .clickable { onDayClick(day) },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(day, color = if (selected) Color.White else SecondaryText, style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.ExtraBold))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun SaveAlarmButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .background(Orange, RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        CheckIcon()
-        Text("알람 저장하기", color = Color.White, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold))
-    }
-}
-
-@Composable
-private fun FeatureIcon(color: Color, type: IconType) {
-    Box(Modifier.size(38.dp).background(Pale, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-        FeatureGlyph(color, type, Modifier.size(20.dp))
-    }
-}
-
-@Composable
-private fun FeatureGlyph(color: Color, type: IconType, modifier: Modifier = Modifier) {
-    Canvas(modifier) {
-        val stroke = 1.6.dp.toPx()
-        when (type) {
-            IconType.Pin -> {
-                drawCircle(color, size.minDimension * .2f, Offset(size.width / 2, size.height * .4f), style = androidx.compose.ui.graphics.drawscope.Stroke(stroke))
-                drawLine(color, Offset(size.width / 2, size.height * .6f), Offset(size.width / 2, size.height * .86f), stroke, StrokeCap.Round)
-            }
-            IconType.Timer -> {
-                drawCircle(color, size.minDimension * .34f, Offset(size.width / 2, size.height * .55f), style = androidx.compose.ui.graphics.drawscope.Stroke(stroke))
-                drawLine(color, Offset(size.width / 2, size.height * .1f), Offset(size.width / 2, size.height * .25f), stroke, StrokeCap.Round)
-                drawLine(color, Offset(size.width * .38f, size.height * .1f), Offset(size.width * .62f, size.height * .1f), stroke, StrokeCap.Round)
-            }
-            IconType.Sound -> {
-                drawLine(color, Offset(size.width * .18f, size.height * .42f), Offset(size.width * .38f, size.height * .42f), stroke, StrokeCap.Round)
-                drawLine(color, Offset(size.width * .18f, size.height * .42f), Offset(size.width * .18f, size.height * .68f), stroke, StrokeCap.Round)
-                drawLine(color, Offset(size.width * .18f, size.height * .68f), Offset(size.width * .38f, size.height * .68f), stroke, StrokeCap.Round)
-                drawLine(color, Offset(size.width * .38f, size.height * .42f), Offset(size.width * .58f, size.height * .24f), stroke, StrokeCap.Round)
-                drawLine(color, Offset(size.width * .58f, size.height * .24f), Offset(size.width * .58f, size.height * .86f), stroke, StrokeCap.Round)
-                drawLine(color, Offset(size.width * .58f, size.height * .86f), Offset(size.width * .38f, size.height * .68f), stroke, StrokeCap.Round)
-                drawArc(color, -55f, 110f, false, Offset(size.width * .55f, size.height * .35f), androidx.compose.ui.geometry.Size(size.width * .32f, size.height * .4f), style = androidx.compose.ui.graphics.drawscope.Stroke(stroke, cap = StrokeCap.Round))
-            }
+            Text(
+                text = soundName,
+                modifier = Modifier.weight(1f),
+                color = colors.primaryText,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = 18.sp,
+                    lineHeight = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
+            )
+            Image(
+                painter = painterResource(colors.chevronIcon),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(width = 12.dp, height = 17.dp)
+                    .graphicsLayer { scaleX = -1f },
+            )
         }
     }
 }
 
 @Composable
-private fun ChevronRight() = Canvas(Modifier.size(22.dp)) {
-    val stroke = 1.5.dp.toPx()
-    drawLine(SecondaryText, Offset(size.width * .4f, size.height * .25f), Offset(size.width * .65f, size.height * .5f), stroke, StrokeCap.Round)
-    drawLine(SecondaryText, Offset(size.width * .65f, size.height * .5f), Offset(size.width * .4f, size.height * .75f), stroke, StrokeCap.Round)
-}
-
-@Composable
-private fun Toggle(enabled: Boolean, onClick: () -> Unit) {
+fun SaveAlarmButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Box(
-        Modifier.size(52.dp, 30.dp).background(if (enabled) Color(0xFFE9F7F1) else Off, CircleShape).clickable(onClick = onClick).padding(4.dp),
-        contentAlignment = if (enabled) Alignment.CenterEnd else Alignment.CenterStart,
-    ) { Box(Modifier.size(22.dp).background(if (enabled) Color(0xFF21A67A) else SecondaryText, CircleShape)) }
+        modifier = modifier
+            .size(width = 252.dp, height = 44.dp)
+            .clip(RoundedCornerShape(500.dp))
+            .background(RingoutOrange)
+            .clickable(
+                role = Role.Button,
+                onClickLabel = "알람 저장",
+                onClick = onClick,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = "저장",
+            color = Color.White,
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontSize = 18.sp,
+                lineHeight = 22.sp,
+                fontWeight = FontWeight.Bold,
+            ),
+        )
+    }
 }
 
 @Composable
-private fun CheckIcon() = Canvas(Modifier.padding(end = 10.dp).size(22.dp)) {
-    val stroke = 1.8.dp.toPx()
-    drawLine(Color.White, Offset(size.width * .2f, size.height * .52f), Offset(size.width * .43f, size.height * .72f), stroke, StrokeCap.Round)
-    drawLine(Color.White, Offset(size.width * .43f, size.height * .72f), Offset(size.width * .82f, size.height * .28f), stroke, StrokeCap.Round)
+private fun SectionLabel(
+    text: String,
+    color: Color,
+) {
+    Text(
+        text = text,
+        color = color,
+        maxLines = 1,
+        style = MaterialTheme.typography.bodyMedium.copy(
+            fontSize = 16.sp,
+            lineHeight = 14.sp,
+            fontWeight = FontWeight.Normal,
+        ),
+    )
 }
-
-@Composable private fun Label(text: String) = Text(text, color = SecondaryText, style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold))
-@Composable private fun Caption(text: String) = Text(text, color = SecondaryText, style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold))
-
-internal fun weekdaySummary(days: List<String>): String = when (days.toSet()) {
-    setOf("월", "화", "수", "목", "금") -> "평일"
-    setOf("토", "일") -> "주말"
-    WeekdayOrder.toSet() -> "매일"
-    emptySet<String>() -> "선택 안 함"
-    else -> WeekdayOrder.filter { it in days }.joinToString(" ")
-}
-
-private enum class IconType { Pin, Timer, Sound }
-
-@Preview @Composable private fun TimePickerCardPreview() = PreviewSurface { TimePickerCard("06:20", WeekdayOrder, {}) }
-@Preview @Composable private fun DestinationCardPreview() = PreviewSurface { DestinationCard("강남역 2번 출구", "서울 강남구 강남대로 지하 396", "현재 위치 기준 1.2 km", {}) }
-@Preview @Composable private fun LimitTimeCardPreview() = PreviewSurface { LimitTimeCard(12, {}) }
-@Preview @Composable private fun AlarmSoundCardPreview() = PreviewSurface { AlarmSoundCard("Morning Flower", {}) }
-@Preview @Composable private fun RepeatScheduleCardPreview() = PreviewSurface { RepeatScheduleCard(true, listOf("월", "화", "수", "목", "금"), {}, {}) }
-@Preview @Composable private fun SaveAlarmButtonPreview() = PreviewSurface { SaveAlarmButton({}) }
 
 @Composable
-private fun PreviewSurface(content: @Composable () -> Unit) {
-    RingoutTheme {
-        Box(Modifier.background(Pale).padding(16.dp)) { content() }
+private fun SupportingLabel(
+    text: String,
+    color: Color,
+) {
+    Text(
+        text = text,
+        color = color,
+        maxLines = 1,
+        style = MaterialTheme.typography.bodySmall.copy(
+            fontSize = 12.sp,
+            lineHeight = 14.sp,
+            fontWeight = FontWeight.Normal,
+        ),
+    )
+}
+
+internal fun weekdaySummary(days: List<String>): String =
+    when (days.toSet()) {
+        setOf("월", "화", "수", "목", "금") -> "평일"
+        setOf("토", "일") -> "주말"
+        WeekdayOrder.toSet() -> "매일"
+        emptySet<String>() -> "선택 안 함"
+        else -> WeekdayOrder.filter { it in days }.joinToString(" ")
+    }
+
+private const val MinLimitMinutes = 1
+private const val MaxLimitMinutes = 30
+private val SliderThumbSize = 16.dp
+private val SliderThumbRadius = SliderThumbSize / 2
+
+@Preview
+@Composable
+private fun AlarmSetupComponentsDarkPreview() {
+    RingoutTheme(themeMode = ThemeMode.Dark) {
+        Column(
+            modifier = Modifier
+                .background(Color.Black)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            TimePickerCard("06:20", {})
+            WeekdaySelector(listOf("월", "화", "수", "금"), {})
+            DestinationCard("집 앞에 수원천", {})
+            LimitTimeCard(13, {})
+            AlarmSoundCard("Ring Ring Ring", {})
+            SaveAlarmButton({})
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun AlarmSetupComponentsLightPreview() {
+    RingoutTheme(themeMode = ThemeMode.Light) {
+        Column(
+            modifier = Modifier
+                .background(Color.White)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            TimePickerCard("06:20", {})
+            WeekdaySelector(listOf("월", "화", "수", "금"), {})
+            DestinationCard("집 앞에 수원천", {})
+            LimitTimeCard(13, {})
+            AlarmSoundCard("Ring Ring Ring", {})
+            SaveAlarmButton({})
+        }
     }
 }

@@ -60,10 +60,10 @@ data class DestinationSelection(
 )
 
 val DefaultDestinationSelection = DestinationSelection(
-    name = "강남역 2번 출구",
-    address = "서울 강남구 강남대로 지하 396",
-    latitude = 37.497942,
-    longitude = 127.027621,
+    name = "집 앞에 수원천",
+    address = "경기 수원시 팔달구 정조로 893",
+    latitude = 37.2875205998,
+    longitude = 127.0146478075,
 )
 
 @Composable

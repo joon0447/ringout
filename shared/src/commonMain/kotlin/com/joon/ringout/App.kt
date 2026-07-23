@@ -116,7 +116,6 @@ private fun RingoutAppContent() {
         -> Box(Modifier.fillMaxSize()) {
             AlarmSetupScreen(
                 destination = destination.name,
-                destinationAddress = destination.address,
                 onBackClick = { screenName = AppScreen.Home.name },
                 onDestinationClick = { screenName = AppScreen.Destination.name },
                 onSaveClick = { time, selectedDays, repeatEnabled, limitMinutes, alarmSound ->
