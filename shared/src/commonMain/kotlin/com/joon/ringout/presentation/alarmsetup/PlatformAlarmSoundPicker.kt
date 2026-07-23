@@ -7,8 +7,19 @@ data class AlarmSoundSelection(
     val uri: String?,
 )
 
+class DeviceAlarmSoundController internal constructor(
+    val sounds: List<AlarmSoundSelection>,
+    private val previewSound: (AlarmSoundSelection) -> Unit,
+    private val stopSoundPreview: () -> Unit,
+) {
+    fun preview(selection: AlarmSoundSelection) {
+        previewSound(selection)
+    }
+
+    fun stopPreview() {
+        stopSoundPreview()
+    }
+}
+
 @Composable
-expect fun rememberAlarmSoundPicker(
-    currentSoundUri: String?,
-    onSoundSelected: (AlarmSoundSelection) -> Unit,
-): () -> Unit
+expect fun rememberDeviceAlarmSoundController(): DeviceAlarmSoundController

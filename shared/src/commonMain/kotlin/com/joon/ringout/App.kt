@@ -15,6 +15,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.joon.ringout.alarm.AlarmScheduleRequest
 import com.joon.ringout.alarm.rememberAlarmController
+import com.joon.ringout.presentation.alarmsound.AlarmSoundScreen
+import com.joon.ringout.presentation.alarmsetup.AlarmSoundSelection
 import com.joon.ringout.presentation.alarmsetup.AlarmSetupScreen
 import com.joon.ringout.presentation.alarmsetup.components.weekdaySummary
 import com.joon.ringout.presentation.destination.DefaultDestinationSelection
@@ -53,6 +55,8 @@ private fun RingoutAppContent() {
     var destinationAddress by rememberSaveable { mutableStateOf(DefaultDestinationSelection.address) }
     var destinationLatitude by rememberSaveable { mutableStateOf(DefaultDestinationSelection.latitude) }
     var destinationLongitude by rememberSaveable { mutableStateOf(DefaultDestinationSelection.longitude) }
+    var alarmSoundName by rememberSaveable { mutableStateOf("Ring Ring Ring") }
+    var alarmSoundUri by rememberSaveable { mutableStateOf<String?>(null) }
     var screenName by rememberSaveable { mutableStateOf(AppScreen.Home.name) }
     var alarms by remember { mutableStateOf<List<HomeAlarm>?>(null) }
     var alarmScheduleError by rememberSaveable { mutableStateOf<String?>(null) }
@@ -61,6 +65,10 @@ private fun RingoutAppContent() {
         address = destinationAddress,
         latitude = destinationLatitude,
         longitude = destinationLongitude,
+    )
+    val alarmSound = AlarmSoundSelection(
+        name = alarmSoundName,
+        uri = alarmSoundUri,
     )
     val screen = AppScreen.valueOf(screenName)
     val alarmController = rememberAlarmController(
@@ -113,11 +121,14 @@ private fun RingoutAppContent() {
 
         AppScreen.AddAlarm,
         AppScreen.Destination,
+        AppScreen.AlarmSound,
         -> Box(Modifier.fillMaxSize()) {
             AlarmSetupScreen(
                 destination = destination.name,
+                alarmSound = alarmSound,
                 onBackClick = { screenName = AppScreen.Home.name },
                 onDestinationClick = { screenName = AppScreen.Destination.name },
+                onAlarmSoundClick = { screenName = AppScreen.AlarmSound.name },
                 onSaveClick = { time, selectedDays, repeatEnabled, limitMinutes, alarmSound ->
                     alarmController.schedule(
                         AlarmScheduleRequest(
@@ -150,6 +161,18 @@ private fun RingoutAppContent() {
                     },
                 )
             }
+
+            if (screen == AppScreen.AlarmSound) {
+                AlarmSoundScreen(
+                    selectedSound = alarmSound,
+                    onBackClick = { screenName = AppScreen.AddAlarm.name },
+                    onSaveClick = { selectedSound ->
+                        alarmSoundName = selectedSound.name
+                        alarmSoundUri = selectedSound.uri
+                        screenName = AppScreen.AddAlarm.name
+                    },
+                )
+            }
         }
     }
 }
@@ -160,6 +183,7 @@ private enum class AppScreen {
     Home,
     AddAlarm,
     Destination,
+    AlarmSound,
 }
 
 private fun AlarmScheduleRequest.toHomeAlarm(enabled: Boolean): HomeAlarm = HomeAlarm(

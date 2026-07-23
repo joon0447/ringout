@@ -36,8 +36,10 @@ import com.joon.ringout.presentation.destination.PlatformBackHandler
 @Composable
 fun AlarmSetupScreen(
     destination: String,
+    alarmSound: AlarmSoundSelection,
     onBackClick: () -> Unit,
     onDestinationClick: () -> Unit,
+    onAlarmSoundClick: () -> Unit,
     onSaveClick: (
         time: String,
         selectedDays: List<String>,
@@ -51,17 +53,8 @@ fun AlarmSetupScreen(
     var selectedDaysValue by rememberSaveable { mutableStateOf("월,화,수,금") }
     var alarmTime by rememberSaveable { mutableStateOf("06:20") }
     var showTimeDialog by rememberSaveable { mutableStateOf(false) }
-    var alarmSoundName by rememberSaveable { mutableStateOf("Ring Ring Ring") }
-    var alarmSoundUri by rememberSaveable { mutableStateOf<String?>(null) }
     val selectedDays = selectedDaysValue.split(",").filter(String::isNotBlank)
     val colors = alarmSetupColors()
-    val openAlarmSoundPicker = rememberAlarmSoundPicker(
-        currentSoundUri = alarmSoundUri,
-        onSoundSelected = { selection ->
-            alarmSoundName = selection.name
-            alarmSoundUri = selection.uri
-        },
-    )
 
     PlatformBackHandler(onBack = onBackClick)
 
@@ -121,8 +114,8 @@ fun AlarmSetupScreen(
                 onMinutesChange = { limitMinutes = it },
             )
             AlarmSoundCard(
-                soundName = alarmSoundName,
-                onClick = openAlarmSoundPicker,
+                soundName = alarmSound.name,
+                onClick = onAlarmSoundClick,
             )
         }
 
@@ -140,7 +133,7 @@ fun AlarmSetupScreen(
                         selectedDays,
                         selectedDays.isNotEmpty(),
                         limitMinutes,
-                        AlarmSoundSelection(alarmSoundName, alarmSoundUri),
+                        alarmSound,
                     )
                 },
             )
@@ -154,8 +147,10 @@ private fun AlarmSetupScreenDarkPreview() {
     RingoutTheme(themeMode = ThemeMode.Dark) {
         AlarmSetupScreen(
             destination = "집 앞에 수원천",
+            alarmSound = AlarmSoundSelection("Ring Ring Ring", null),
             onBackClick = {},
             onDestinationClick = {},
+            onAlarmSoundClick = {},
             onSaveClick = { _, _, _, _, _ -> },
         )
     }
@@ -167,8 +162,10 @@ private fun AlarmSetupScreenLightPreview() {
     RingoutTheme(themeMode = ThemeMode.Light) {
         AlarmSetupScreen(
             destination = "집 앞에 수원천",
+            alarmSound = AlarmSoundSelection("Ring Ring Ring", null),
             onBackClick = {},
             onDestinationClick = {},
+            onAlarmSoundClick = {},
             onSaveClick = { _, _, _, _, _ -> },
         )
     }

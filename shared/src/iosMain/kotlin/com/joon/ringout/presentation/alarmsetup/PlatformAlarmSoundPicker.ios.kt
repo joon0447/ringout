@@ -4,7 +4,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 
 @Composable
-actual fun rememberAlarmSoundPicker(
-    currentSoundUri: String?,
-    onSoundSelected: (AlarmSoundSelection) -> Unit,
-): () -> Unit = remember { {} }
+actual fun rememberDeviceAlarmSoundController(): DeviceAlarmSoundController =
+    remember {
+        DeviceAlarmSoundController(
+            sounds = listOf(
+                AlarmSoundSelection(
+                    name = "기본 알람음",
+                    uri = null,
+                ),
+            ),
+            previewSound = {},
+            stopSoundPreview = {},
+        )
+    }
