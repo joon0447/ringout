@@ -2,7 +2,10 @@ package com.joon.ringout
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import org.jetbrains.compose.resources.Font
@@ -14,8 +17,52 @@ import ringout.shared.generated.resources.pretendard_light
 import ringout.shared.generated.resources.pretendard_medium
 import ringout.shared.generated.resources.pretendard_thin
 
+private val RingoutOrange = Color(0xFFFF6D2E)
+private val RingoutLightBackground = Color(0xFFF7F8F5)
+private val RingoutLightContent = Color(0xFF161A17)
+private val RingoutDarkSurface = Color(0xFF161A17)
+
+private val RingoutLightColorScheme = lightColorScheme(
+    primary = RingoutOrange,
+    onPrimary = Color.Black,
+    primaryContainer = Color(0xFFFFDBCC),
+    onPrimaryContainer = Color(0xFF351000),
+    secondary = Color(0xFF5C625D),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFE0E7E0),
+    onSecondaryContainer = Color(0xFF191D19),
+    background = RingoutLightBackground,
+    onBackground = RingoutLightContent,
+    surface = RingoutLightBackground,
+    onSurface = RingoutLightContent,
+    surfaceVariant = Color(0xFFE1E4DE),
+    onSurfaceVariant = Color(0xFF454844),
+    outline = Color(0xFF767973),
+)
+
+private val RingoutDarkColorScheme = darkColorScheme(
+    primary = RingoutOrange,
+    onPrimary = Color.Black,
+    primaryContainer = Color(0xFF8A2C00),
+    onPrimaryContainer = Color(0xFFFFDBCC),
+    secondary = Color(0xFFC3C9C3),
+    onSecondary = Color(0xFF2D322E),
+    secondaryContainer = Color(0xFF434944),
+    onSecondaryContainer = Color(0xFFE0E7E0),
+    background = Color.Black,
+    onBackground = RingoutLightBackground,
+    surface = RingoutDarkSurface,
+    onSurface = RingoutLightBackground,
+    surfaceVariant = Color(0xFF2B302C),
+    onSurfaceVariant = Color(0xFFC5C8C2),
+    outline = Color(0xFF8F938D),
+)
+
 @Composable
-fun RingoutTheme(content: @Composable () -> Unit) {
+fun RingoutTheme(
+    themeMode: ThemeMode = ThemeMode.Dark,
+    content: @Composable () -> Unit,
+) {
     val pretendard = FontFamily(
         Font(Res.font.pretendard_thin, FontWeight.Thin),
         Font(Res.font.pretendard_light, FontWeight.Light),
@@ -45,6 +92,10 @@ fun RingoutTheme(content: @Composable () -> Unit) {
     )
 
     MaterialTheme(
+        colorScheme = when (themeMode) {
+            ThemeMode.Dark -> RingoutDarkColorScheme
+            ThemeMode.Light -> RingoutLightColorScheme
+        },
         typography = typography,
         content = content,
     )

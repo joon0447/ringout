@@ -16,6 +16,10 @@ class MainActivity : ComponentActivity() {
                 scrim = Color.TRANSPARENT,
                 darkScrim = Color.TRANSPARENT,
             ),
+            navigationBarStyle = SystemBarStyle.light(
+                scrim = Color.TRANSPARENT,
+                darkScrim = Color.TRANSPARENT,
+            ),
         )
         super.onCreate(savedInstanceState)
 

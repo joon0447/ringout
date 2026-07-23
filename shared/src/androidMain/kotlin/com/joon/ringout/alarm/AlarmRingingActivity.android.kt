@@ -12,6 +12,7 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.joon.ringout.RingoutTheme
+import com.joon.ringout.rememberThemeController
 import com.joon.ringout.presentation.ringing.AlarmRingingScreen
 
 class AlarmRingingActivity : ComponentActivity() {
@@ -45,7 +46,8 @@ class AlarmRingingActivity : ComponentActivity() {
         val limitMinutes = intent.getIntExtra(AlarmRuntime.EXTRA_LIMIT_MINUTES, 12)
         val targetDistanceKm = intent.getDoubleExtra(AlarmRuntime.EXTRA_TARGET_DISTANCE_KM, 1.2)
         setContent {
-            RingoutTheme {
+            val themeController = rememberThemeController()
+            RingoutTheme(themeMode = themeController.themeMode) {
                 AlarmRingingScreen(
                     alarmTime = alarmTime,
                     limitMinutes = limitMinutes,
