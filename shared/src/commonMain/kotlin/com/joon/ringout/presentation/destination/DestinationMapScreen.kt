@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.joon.ringout.RingoutTheme
+import com.joon.ringout.presentation.destination.components.DestinationNicknameDialog
 import kotlin.math.abs
 
 data class DestinationSelection(
@@ -84,9 +85,14 @@ fun DestinationMapScreen(
     var isSearching by remember { mutableStateOf(false) }
     var searchError by remember { mutableStateOf<String?>(null) }
     var cameraTarget by remember { mutableStateOf<DestinationSelection?>(null) }
+    var pendingSelection by remember { mutableStateOf<DestinationSelection?>(null) }
 
     PlatformBackHandler(onBack = {
-        if (isSearchOpen) isSearchOpen = false else onBackClick()
+        when {
+            pendingSelection != null -> pendingSelection = null
+            isSearchOpen -> isSearchOpen = false
+            else -> onBackClick()
+        }
     })
 
     PlatformDestinationSearchEffect(
@@ -103,68 +109,86 @@ fun DestinationMapScreen(
         },
     )
 
-    DestinationMapLayout(
-        selection = selection,
-        isResolvingAddress = isResolvingAddress,
-        mapError = mapError,
-        onBackClick = onBackClick,
-        isSearchOpen = isSearchOpen,
-        searchQuery = searchQuery,
-        searchResults = searchResults,
-        isSearching = isSearching,
-        searchError = searchError,
-        onSearchQueryChange = {
-            searchQuery = it
-            searchError = null
-        },
-        onSearchClick = { isSearchOpen = true },
-        onSearchClose = { isSearchOpen = false },
-        onSearchSubmit = {
-            val query = searchQuery.trim()
-            if (query.isNotEmpty()) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+    ) {
+        DestinationMapLayout(
+            selection = selection,
+            isResolvingAddress = isResolvingAddress,
+            mapError = mapError,
+            onBackClick = onBackClick,
+            isSearchOpen = isSearchOpen,
+            searchQuery = searchQuery,
+            searchResults = searchResults,
+            isSearching = isSearching,
+            searchError = searchError,
+            onSearchQueryChange = {
+                searchQuery = it
                 searchError = null
-                submittedQuery = query
-                searchRequestId += 1
-            }
-        },
-        onSearchResultClick = { result ->
-            selection = result
-            cameraTarget = result
-            isSearchOpen = false
-            searchResults = emptyList()
-            searchError = null
-        },
-        onConfirmClick = { onConfirmClick(selection) },
-        modifier = modifier,
-        mapContent = { mapModifier ->
-            PlatformDestinationMap(
-                initialLatitude = initialSelection.latitude,
-                initialLongitude = initialSelection.longitude,
-                cameraTarget = cameraTarget,
-                onCameraMoveStarted = { isResolvingAddress = true },
-                onCameraIdle = { latitude, longitude, placeName, address ->
-                    val searchedTarget = cameraTarget?.takeIf {
-                        abs(it.latitude - latitude) < 0.00001 &&
-                            abs(it.longitude - longitude) < 0.00001
-                    }
-                    selection = searchedTarget ?: DestinationSelection(
-                        name = placeName?.takeIf(String::isNotBlank) ?: "선택한 위치",
-                        address = address?.takeIf(String::isNotBlank)
-                            ?: "주소를 확인할 수 없는 위치",
-                        latitude = latitude,
-                        longitude = longitude,
+            },
+            onSearchClick = { isSearchOpen = true },
+            onSearchClose = { isSearchOpen = false },
+            onSearchSubmit = {
+                val query = searchQuery.trim()
+                if (query.isNotEmpty()) {
+                    searchError = null
+                    submittedQuery = query
+                    searchRequestId += 1
+                }
+            },
+            onSearchResultClick = { result ->
+                selection = result
+                cameraTarget = result
+                isSearchOpen = false
+                searchResults = emptyList()
+                searchError = null
+            },
+            onConfirmClick = { pendingSelection = selection },
+            modifier = Modifier.fillMaxSize(),
+            mapContent = { mapModifier ->
+                PlatformDestinationMap(
+                    initialLatitude = initialSelection.latitude,
+                    initialLongitude = initialSelection.longitude,
+                    cameraTarget = cameraTarget,
+                    onCameraMoveStarted = { isResolvingAddress = true },
+                    onCameraIdle = { latitude, longitude, placeName, address ->
+                        val searchedTarget = cameraTarget?.takeIf {
+                            abs(it.latitude - latitude) < 0.00001 &&
+                                abs(it.longitude - longitude) < 0.00001
+                        }
+                        selection = searchedTarget ?: DestinationSelection(
+                            name = placeName?.takeIf(String::isNotBlank) ?: "선택한 위치",
+                            address = address?.takeIf(String::isNotBlank)
+                                ?: "주소를 확인할 수 없는 위치",
+                            latitude = latitude,
+                            longitude = longitude,
+                        )
+                        cameraTarget = null
+                        isResolvingAddress = false
+                    },
+                    onMapError = { error ->
+                        mapError = error
+                        isResolvingAddress = false
+                    },
+                    modifier = mapModifier,
+                )
+            },
+        )
+
+        pendingSelection?.let { selectedDestination ->
+            DestinationNicknameDialog(
+                address = selectedDestination.address,
+                onDismissRequest = { pendingSelection = null },
+                onSave = { nickname ->
+                    pendingSelection = null
+                    onConfirmClick(
+                        selectedDestination.copy(name = nickname),
                     )
-                    cameraTarget = null
-                    isResolvingAddress = false
                 },
-                onMapError = { error ->
-                    mapError = error
-                    isResolvingAddress = false
-                },
-                modifier = mapModifier,
+                modifier = Modifier.zIndex(2f),
             )
-        },
-    )
+        }
+    }
 }
 
 @Composable
