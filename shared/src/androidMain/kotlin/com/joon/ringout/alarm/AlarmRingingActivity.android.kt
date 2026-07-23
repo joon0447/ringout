@@ -12,15 +12,18 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.joon.ringout.RingoutTheme
+import com.joon.ringout.SystemBarAppearanceEffect
 import com.joon.ringout.rememberThemeController
 import com.joon.ringout.presentation.ringing.AlarmRingingScreen
 
 class AlarmRingingActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.light(
+            statusBarStyle = SystemBarStyle.dark(
                 scrim = Color.TRANSPARENT,
-                darkScrim = Color.TRANSPARENT,
+            ),
+            navigationBarStyle = SystemBarStyle.dark(
+                scrim = Color.TRANSPARENT,
             ),
         )
         super.onCreate(savedInstanceState)
@@ -47,6 +50,7 @@ class AlarmRingingActivity : ComponentActivity() {
         val targetDistanceKm = intent.getDoubleExtra(AlarmRuntime.EXTRA_TARGET_DISTANCE_KM, 1.2)
         setContent {
             val themeController = rememberThemeController()
+            SystemBarAppearanceEffect(themeController.themeMode)
             RingoutTheme(themeMode = themeController.themeMode) {
                 AlarmRingingScreen(
                     alarmTime = alarmTime,

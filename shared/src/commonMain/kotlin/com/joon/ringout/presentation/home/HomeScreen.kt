@@ -1,28 +1,12 @@
 package com.joon.ringout.presentation.home
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import com.joon.ringout.RingoutTheme
-import com.joon.ringout.presentation.home.components.AlarmListHeader
-import com.joon.ringout.presentation.home.components.AlarmRow
-import com.joon.ringout.presentation.home.components.HomeBottomBar
+import com.joon.ringout.ThemeMode
+import com.joon.ringout.presentation.home.components.HomeAlarmListState
+import com.joon.ringout.presentation.home.components.HomeEmptyState
 
 data class HomeAlarm(
     val id: String,
@@ -49,60 +33,30 @@ fun HomeScreen(
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(HomeBackground)
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .padding(start = 16.dp, top = 10.dp, end = 16.dp, bottom = 16.dp),
-    ) {
-        AlarmListHeader(onAddAlarm = onAddAlarm)
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (alarms.isEmpty()) {
-                Text(
-                    text = "등록된 알람이 없습니다.",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                    ),
-                    color = EmptyStateText,
-                )
-            } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 18.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    alarms.forEach { alarm ->
-                        AlarmRow(
-                            alarm = alarm,
-                            onClick = { onAlarmClick(alarm.id) },
-                            onEnabledChange = { enabled -> onAlarmEnabledChange(alarm.id, enabled) },
-                        )
-                    }
-                }
-            }
-        }
-
-        HomeBottomBar(onSettingsClick = onSettingsClick)
+    if (alarms.isEmpty()) {
+        HomeEmptyState(
+            onAddAlarm = onAddAlarm,
+            onSettingsClick = onSettingsClick,
+            modifier = modifier,
+        )
+        return
     }
+
+    HomeAlarmListState(
+        alarms = alarms,
+        nextAlarmDescription = rememberNextAlarmDescription(alarms),
+        onAddAlarm = onAddAlarm,
+        onAlarmClick = onAlarmClick,
+        onAlarmEnabledChange = onAlarmEnabledChange,
+        onSettingsClick = onSettingsClick,
+        modifier = modifier,
+    )
 }
 
-private val HomeBackground = Color(0xFFF7F8F5)
-private val EmptyStateText = Color(0xFF161A17)
-
-@Preview
+@Preview(name = "Dark empty Home", widthDp = 402, heightDp = 941)
 @Composable
-private fun HomeScreenPreview() {
-    RingoutTheme {
+private fun DarkEmptyHomeScreenPreview() {
+    RingoutTheme(themeMode = ThemeMode.Dark) {
         HomeScreen(
             alarms = emptyList(),
             onAddAlarm = {},
@@ -112,3 +66,68 @@ private fun HomeScreenPreview() {
         )
     }
 }
+
+@Preview(name = "Light empty Home", widthDp = 402, heightDp = 941)
+@Composable
+private fun LightEmptyHomeScreenPreview() {
+    RingoutTheme(themeMode = ThemeMode.Light) {
+        HomeScreen(
+            alarms = emptyList(),
+            onAddAlarm = {},
+            onAlarmClick = {},
+            onAlarmEnabledChange = { _, _ -> },
+            onSettingsClick = {},
+        )
+    }
+}
+
+@Preview(name = "Dark populated Home", widthDp = 402, heightDp = 941)
+@Composable
+private fun DarkPopulatedHomeScreenPreview() {
+    RingoutTheme(themeMode = ThemeMode.Dark) {
+        HomeAlarmListState(
+            alarms = previewAlarms(),
+            nextAlarmDescription = "7시간 20분 후 알람이 울려요.",
+            onAddAlarm = {},
+            onAlarmClick = {},
+            onAlarmEnabledChange = { _, _ -> },
+            onSettingsClick = {},
+        )
+    }
+}
+
+@Preview(name = "Light populated Home", widthDp = 402, heightDp = 941)
+@Composable
+private fun LightPopulatedHomeScreenPreview() {
+    RingoutTheme(themeMode = ThemeMode.Light) {
+        HomeAlarmListState(
+            alarms = previewAlarms(),
+            nextAlarmDescription = "7시간 20분 후 알람이 울려요.",
+            onAddAlarm = {},
+            onAlarmClick = {},
+            onAlarmEnabledChange = { _, _ -> },
+            onSettingsClick = {},
+        )
+    }
+}
+
+private fun previewAlarms() = listOf(
+    HomeAlarm(
+        id = "weekend",
+        time = "06:20",
+        days = "주말",
+        destination = "헬스장",
+        timeLimitMinutes = 12,
+        isEnabled = true,
+        selectedDays = listOf("토", "일"),
+    ),
+    HomeAlarm(
+        id = "weekday",
+        time = "06:20",
+        days = "월 화 수 목",
+        destination = "헬스장",
+        timeLimitMinutes = 12,
+        isEnabled = false,
+        selectedDays = listOf("월", "화", "수", "목"),
+    ),
+)

@@ -5,6 +5,8 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -18,9 +20,10 @@ import ringout.shared.generated.resources.pretendard_medium
 import ringout.shared.generated.resources.pretendard_thin
 
 private val RingoutOrange = Color(0xFFFF6D2E)
-private val RingoutLightBackground = Color(0xFFF7F8F5)
-private val RingoutLightContent = Color(0xFF161A17)
-private val RingoutDarkSurface = Color(0xFF161A17)
+private val RingoutLightBackground = Color(0xFFF5F5F5)
+private val RingoutLightContent = Color(0xFF111827)
+
+internal val LocalRingoutThemeMode = staticCompositionLocalOf { ThemeMode.Dark }
 
 private val RingoutLightColorScheme = lightColorScheme(
     primary = RingoutOrange,
@@ -33,10 +36,10 @@ private val RingoutLightColorScheme = lightColorScheme(
     onSecondaryContainer = Color(0xFF191D19),
     background = RingoutLightBackground,
     onBackground = RingoutLightContent,
-    surface = RingoutLightBackground,
+    surface = Color.White,
     onSurface = RingoutLightContent,
     surfaceVariant = Color(0xFFE1E4DE),
-    onSurfaceVariant = Color(0xFF454844),
+    onSurfaceVariant = Color(0xFF6B7280),
     outline = Color(0xFF767973),
 )
 
@@ -50,11 +53,11 @@ private val RingoutDarkColorScheme = darkColorScheme(
     secondaryContainer = Color(0xFF434944),
     onSecondaryContainer = Color(0xFFE0E7E0),
     background = Color.Black,
-    onBackground = RingoutLightBackground,
-    surface = RingoutDarkSurface,
-    onSurface = RingoutLightBackground,
+    onBackground = Color.White,
+    surface = Color.Black,
+    onSurface = Color.White,
     surfaceVariant = Color(0xFF2B302C),
-    onSurfaceVariant = Color(0xFFC5C8C2),
+    onSurfaceVariant = Color.White,
     outline = Color(0xFF8F938D),
 )
 
@@ -91,12 +94,14 @@ fun RingoutTheme(
         labelSmall = defaults.labelSmall.copy(fontFamily = pretendard),
     )
 
-    MaterialTheme(
-        colorScheme = when (themeMode) {
-            ThemeMode.Dark -> RingoutDarkColorScheme
-            ThemeMode.Light -> RingoutLightColorScheme
-        },
-        typography = typography,
-        content = content,
-    )
+    CompositionLocalProvider(LocalRingoutThemeMode provides themeMode) {
+        MaterialTheme(
+            colorScheme = when (themeMode) {
+                ThemeMode.Dark -> RingoutDarkColorScheme
+                ThemeMode.Light -> RingoutLightColorScheme
+            },
+            typography = typography,
+            content = content,
+        )
+    }
 }

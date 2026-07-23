@@ -29,6 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.joon.ringout.RingoutTheme
+import com.joon.ringout.presentation.toTwelveHourDisplay
 import kotlin.math.roundToInt
 
 private val PrimaryText = Color(0xFF161A17)
@@ -86,23 +87,6 @@ fun TimePickerCard(
         )
     }
 }
-
-private fun String.toTwelveHourDisplay(): TwelveHourDisplay {
-    val rawHour = substringBefore(":").toIntOrNull() ?: 0
-    val minute = substringAfter(":", "00").toIntOrNull()?.coerceIn(0, 59) ?: 0
-    val hour24 = ((rawHour % 24) + 24) % 24
-    val hour12 = (hour24 % 12).takeIf { it != 0 } ?: 12
-
-    return TwelveHourDisplay(
-        period = if (hour24 < 12) "오전" else "오후",
-        time = "${hour12.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}",
-    )
-}
-
-private data class TwelveHourDisplay(
-    val period: String,
-    val time: String,
-)
 
 @Composable
 fun DestinationCard(

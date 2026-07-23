@@ -31,6 +31,8 @@ fun App() {
     val themeController = rememberThemeController()
     var isSplashVisible by rememberSaveable { mutableStateOf(true) }
 
+    SystemBarAppearanceEffect(themeController.themeMode)
+
     LaunchedEffect(Unit) {
         delay(SplashDurationMillis)
         isSplashVisible = false
@@ -52,7 +54,7 @@ private fun RingoutAppContent() {
     var destinationLatitude by rememberSaveable { mutableStateOf(DefaultDestinationSelection.latitude) }
     var destinationLongitude by rememberSaveable { mutableStateOf(DefaultDestinationSelection.longitude) }
     var screenName by rememberSaveable { mutableStateOf(AppScreen.Home.name) }
-    var alarms by remember { mutableStateOf(emptyList<HomeAlarm>()) }
+    var alarms by remember { mutableStateOf<List<HomeAlarm>?>(null) }
     var alarmScheduleError by rememberSaveable { mutableStateOf<String?>(null) }
     val destination = DestinationSelection(
         name = destinationName,
@@ -63,19 +65,22 @@ private fun RingoutAppContent() {
     val screen = AppScreen.valueOf(screenName)
     val alarmController = rememberAlarmController(
         onScheduled = { request ->
-            alarms = alarms
+            alarms = alarms.orEmpty()
                 .filterNot { it.id == request.id } +
                 request.toHomeAlarm(enabled = true)
             screenName = AppScreen.Home.name
         },
         onError = { alarmScheduleError = it },
     )
-    LaunchedEffect(alarmController) {
-        if (alarms.isEmpty()) {
-            alarms = alarmController.savedAlarms.map { saved ->
-                saved.request.toHomeAlarm(enabled = saved.enabled)
-            }
+    val savedAlarms = remember(alarmController) {
+        alarmController.savedAlarms.map { saved ->
+            saved.request.toHomeAlarm(enabled = saved.enabled)
         }
+    }
+    val visibleAlarms = alarms ?: savedAlarms
+
+    LaunchedEffect(alarmController) {
+        if (alarms == null) alarms = savedAlarms
         alarmController.ensureFullScreenAccess()
     }
 
@@ -94,12 +99,12 @@ private fun RingoutAppContent() {
 
     when (screen) {
         AppScreen.Home -> HomeScreen(
-            alarms = alarms,
+            alarms = visibleAlarms,
             onAddAlarm = { screenName = AppScreen.AddAlarm.name },
             onAlarmClick = {},
             onAlarmEnabledChange = { alarmId, enabled ->
                 alarmController.setEnabled(alarmId, enabled)
-                alarms = alarms.map { alarm ->
+                alarms = visibleAlarms.map { alarm ->
                     if (alarm.id == alarmId) alarm.copy(isEnabled = enabled) else alarm
                 }
             },
