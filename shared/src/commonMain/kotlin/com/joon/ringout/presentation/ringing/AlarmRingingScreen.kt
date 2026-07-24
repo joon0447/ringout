@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -13,89 +12,93 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.joon.ringout.RingoutTheme
-import com.joon.ringout.presentation.ringing.components.AlarmPulseVisual
-import com.joon.ringout.presentation.ringing.components.MissionRulePanel
-import com.joon.ringout.presentation.ringing.components.RingingActionButton
+import com.joon.ringout.ThemeMode
+import com.joon.ringout.presentation.ringing.components.AlarmBellVisual
+import com.joon.ringout.presentation.ringing.components.AlarmDismissButton
+import com.joon.ringout.presentation.ringing.components.AlarmTimeDetails
+import com.joon.ringout.presentation.ringing.components.alarmRingingColors
 
 @Composable
 fun AlarmRingingScreen(
     alarmTime: String,
+    dateText: String,
     limitMinutes: Int,
-    targetDistanceKm: Double,
-    onStartMissionClick: () -> Unit,
+    destinationName: String,
+    onDismissAndNavigateClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val colors = alarmRingingColors()
+
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(RingingBackground)
+            .background(colors.background)
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(start = 20.dp, top = 10.dp, end = 20.dp, bottom = 22.dp),
+            .padding(horizontal = 20.dp, vertical = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween,
+        verticalArrangement = Arrangement.spacedBy(40.dp),
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(18.dp),
-        ) {
-            Text(
-                text = alarmTime,
-                color = PrimaryText,
-                style = MaterialTheme.typography.displayLarge.copy(
-                    fontSize = 62.sp,
-                    lineHeight = 68.sp,
-                    fontWeight = FontWeight.Bold,
-                ),
-            )
-            Text(
-                text = "일어나서 러닝 미션을\n시작하세요",
-                modifier = Modifier.fillMaxWidth(),
-                color = PrimaryText,
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontSize = 28.sp,
-                    lineHeight = 31.sp,
-                    fontWeight = FontWeight.Bold,
-                ),
-            )
-        }
-
-        AlarmPulseVisual()
-
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            MissionRulePanel(
-                targetDistanceKm = targetDistanceKm,
-                limitMinutes = limitMinutes,
-            )
-            RingingActionButton(onClick = onStartMissionClick)
-        }
+        AlarmBellVisual()
+        Text(
+            text = dateText,
+            color = colors.primaryText,
+            maxLines = 1,
+            style = MaterialTheme.typography.headlineSmall.copy(
+                fontSize = 24.sp,
+                lineHeight = 29.sp,
+                fontWeight = FontWeight.Bold,
+            ),
+        )
+        AlarmTimeDetails(
+            alarmTime = formatAlarmDisplayTime(alarmTime),
+            limitMinutes = limitMinutes,
+            destinationName = destinationName,
+        )
+        AlarmDismissButton(onClick = onDismissAndNavigateClick)
     }
 }
 
-private val RingingBackground = Color(0xFFF7F8F5)
-private val PrimaryText = Color(0xFF161A17)
+internal fun formatAlarmDisplayTime(value: String): String {
+    val parts = value.trim().split(":")
+    val hour = parts.getOrNull(0)?.toIntOrNull()?.takeIf { it in 0..23 }
+    val minute = parts.getOrNull(1)?.toIntOrNull()?.takeIf { it in 0..59 }
+    return if (hour != null && minute != null) {
+        "$hour:${minute.toString().padStart(2, '0')}"
+    } else {
+        value.ifBlank { "--:--" }
+    }
+}
 
-@Preview
+@Preview(widthDp = 402, heightDp = 941)
 @Composable
-private fun AlarmRingingScreenPreview() {
-    RingoutTheme {
+private fun AlarmRingingScreenDarkPreview() {
+    RingoutTheme(themeMode = ThemeMode.Dark) {
         AlarmRingingScreen(
-            alarmTime = "06:20",
-            limitMinutes = 12,
-            targetDistanceKm = 1.2,
-            onStartMissionClick = {},
+            alarmTime = "07:00",
+            dateText = "2026년 7월 23일 목요일",
+            limitMinutes = 30,
+            destinationName = "강남역 2번 출구",
+            onDismissAndNavigateClick = {},
+        )
+    }
+}
+
+@Preview(widthDp = 402, heightDp = 941)
+@Composable
+private fun AlarmRingingScreenLightPreview() {
+    RingoutTheme(themeMode = ThemeMode.Light) {
+        AlarmRingingScreen(
+            alarmTime = "07:00",
+            dateText = "2026년 7월 23일 목요일",
+            limitMinutes = 30,
+            destinationName = "강남역 2번 출구",
+            onDismissAndNavigateClick = {},
         )
     }
 }

@@ -15,6 +15,9 @@ import com.joon.ringout.RingoutTheme
 import com.joon.ringout.SystemBarAppearanceEffect
 import com.joon.ringout.rememberThemeController
 import com.joon.ringout.presentation.ringing.AlarmRingingScreen
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 class AlarmRingingActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,16 +50,20 @@ class AlarmRingingActivity : ComponentActivity() {
 
         val alarmTime = intent.getStringExtra(AlarmRuntime.EXTRA_ALARM_TIME).orEmpty()
         val limitMinutes = intent.getIntExtra(AlarmRuntime.EXTRA_LIMIT_MINUTES, 12)
-        val targetDistanceKm = intent.getDoubleExtra(AlarmRuntime.EXTRA_TARGET_DISTANCE_KM, 1.2)
+        val destinationName = intent
+            .getStringExtra(AlarmRuntime.EXTRA_DESTINATION_NAME)
+            .orEmpty()
+            .ifBlank { "선택한 목적지" }
         setContent {
             val themeController = rememberThemeController()
             SystemBarAppearanceEffect(themeController.themeMode)
             RingoutTheme(themeMode = themeController.themeMode) {
                 AlarmRingingScreen(
                     alarmTime = alarmTime,
+                    dateText = currentDateText(),
                     limitMinutes = limitMinutes,
-                    targetDistanceKm = targetDistanceKm,
-                    onStartMissionClick = ::stopAlarmAndOpenApp,
+                    destinationName = destinationName,
+                    onDismissAndNavigateClick = ::stopAlarmAndOpenApp,
                 )
             }
         }
@@ -72,10 +79,16 @@ class AlarmRingingActivity : ComponentActivity() {
             launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             startActivity(launchIntent)
         }
-        finishAndRemoveTask()
+        finish()
     }
 
+    private fun currentDateText(): String =
+        LocalDate.now().format(AlarmDateFormatter)
+
     companion object {
+        private val AlarmDateFormatter =
+            DateTimeFormatter.ofPattern("yyyy년 M월 d일 EEEE", Locale.KOREAN)
+
         fun intent(context: Context, request: AlarmScheduleRequest): Intent =
             Intent(context, AlarmRingingActivity::class.java).apply {
                 action = AlarmRuntime.ACTION_RING
