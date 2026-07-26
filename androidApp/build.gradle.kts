@@ -48,8 +48,8 @@ android {
         applicationId = "com.joon.ringout"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 2026002
-        versionName = "0.0.2"
+        versionCode = 2026003
+        versionName = "0.0.3"
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$escapedKakaoNativeAppKey\"")
         manifestPlaceholders["kakaoRestApiKey"] = kakaoRestApiKey
     }
