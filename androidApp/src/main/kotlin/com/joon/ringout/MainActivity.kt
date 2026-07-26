@@ -22,7 +22,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            App()
+            App(appVersion = BuildConfig.VERSION_NAME)
         }
     }
 }
@@ -30,5 +30,5 @@ class MainActivity : ComponentActivity() {
 @Preview
 @Composable
 fun AppAndroidPreview() {
-    App()
+    App(appVersion = BuildConfig.VERSION_NAME)
 }

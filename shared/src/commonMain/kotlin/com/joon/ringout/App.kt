@@ -24,12 +24,13 @@ import com.joon.ringout.presentation.destination.DestinationMapScreen
 import com.joon.ringout.presentation.destination.DestinationSelection
 import com.joon.ringout.presentation.home.HomeAlarm
 import com.joon.ringout.presentation.home.HomeScreen
+import com.joon.ringout.presentation.settings.SettingsScreen
 import com.joon.ringout.presentation.splash.SplashScreen
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
 @Composable
-fun App() {
+fun App(appVersion: String = "") {
     val themeController = rememberThemeController()
     var isSplashVisible by rememberSaveable { mutableStateOf(true) }
 
@@ -44,13 +45,21 @@ fun App() {
         if (isSplashVisible) {
             SplashScreen(themeMode = themeController.themeMode)
         } else {
-            RingoutAppContent()
+            RingoutAppContent(
+                themeMode = themeController.themeMode,
+                appVersion = appVersion,
+                onThemeModeChange = themeController::setThemeMode,
+            )
         }
     }
 }
 
 @Composable
-private fun RingoutAppContent() {
+private fun RingoutAppContent(
+    themeMode: ThemeMode,
+    appVersion: String,
+    onThemeModeChange: (ThemeMode) -> Unit,
+) {
     var destinationName by rememberSaveable { mutableStateOf(DefaultDestinationSelection.name) }
     var destinationAddress by rememberSaveable { mutableStateOf(DefaultDestinationSelection.address) }
     var destinationLatitude by rememberSaveable { mutableStateOf(DefaultDestinationSelection.latitude) }
@@ -116,7 +125,14 @@ private fun RingoutAppContent() {
                     if (alarm.id == alarmId) alarm.copy(isEnabled = enabled) else alarm
                 }
             },
-            onSettingsClick = {},
+            onSettingsClick = { screenName = AppScreen.Settings.name },
+        )
+
+        AppScreen.Settings -> SettingsScreen(
+            themeMode = themeMode,
+            appVersion = appVersion,
+            onThemeModeChange = onThemeModeChange,
+            onBackClick = { screenName = AppScreen.Home.name },
         )
 
         AppScreen.AddAlarm,
@@ -184,6 +200,7 @@ private enum class AppScreen {
     AddAlarm,
     Destination,
     AlarmSound,
+    Settings,
 }
 
 private fun AlarmScheduleRequest.toHomeAlarm(enabled: Boolean): HomeAlarm = HomeAlarm(
