@@ -28,6 +28,7 @@ internal fun HomeAlarmListState(
     onAddAlarm: () -> Unit,
     onAlarmClick: (String) -> Unit,
     onAlarmEnabledChange: (String, Boolean) -> Unit,
+    onAlarmDelete: (String) -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
     activeAlarmMission: ActiveAlarmMission? = null,
@@ -96,6 +97,7 @@ internal fun HomeAlarmListState(
                             onEnabledChange = { enabled ->
                                 onAlarmEnabledChange(alarm.id, enabled)
                             },
+                            onDelete = { onAlarmDelete(alarm.id) },
                         )
                     }
                 }

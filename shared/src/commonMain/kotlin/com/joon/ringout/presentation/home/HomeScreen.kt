@@ -32,6 +32,7 @@ fun HomeScreen(
     onAddAlarm: () -> Unit,
     onAlarmClick: (String) -> Unit,
     onAlarmEnabledChange: (String, Boolean) -> Unit,
+    onAlarmDelete: (String) -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
     activeAlarmMission: ActiveAlarmMission? = null,
@@ -55,6 +56,7 @@ fun HomeScreen(
         onAddAlarm = onAddAlarm,
         onAlarmClick = onAlarmClick,
         onAlarmEnabledChange = onAlarmEnabledChange,
+        onAlarmDelete = onAlarmDelete,
         onSettingsClick = onSettingsClick,
         modifier = modifier,
         activeAlarmMission = activeAlarmMission,
@@ -76,6 +78,7 @@ private fun DarkEmptyHomeScreenPreview() {
             onAddAlarm = {},
             onAlarmClick = {},
             onAlarmEnabledChange = { _, _ -> },
+            onAlarmDelete = {},
             onSettingsClick = {},
         )
     }
@@ -90,6 +93,7 @@ private fun LightEmptyHomeScreenPreview() {
             onAddAlarm = {},
             onAlarmClick = {},
             onAlarmEnabledChange = { _, _ -> },
+            onAlarmDelete = {},
             onSettingsClick = {},
         )
     }
@@ -105,6 +109,7 @@ private fun DarkPopulatedHomeScreenPreview() {
             onAddAlarm = {},
             onAlarmClick = {},
             onAlarmEnabledChange = { _, _ -> },
+            onAlarmDelete = {},
             onSettingsClick = {},
         )
     }
@@ -120,6 +125,7 @@ private fun LightPopulatedHomeScreenPreview() {
             onAddAlarm = {},
             onAlarmClick = {},
             onAlarmEnabledChange = { _, _ -> },
+            onAlarmDelete = {},
             onSettingsClick = {},
         )
     }

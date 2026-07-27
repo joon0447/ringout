@@ -3,6 +3,7 @@ package com.joon.ringout.presentation.home.components
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -137,6 +139,7 @@ internal fun AlarmRow(
     alarm: HomeAlarm,
     onClick: () -> Unit,
     onEnabledChange: (Boolean) -> Unit,
+    onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = homeAlarmColors()
@@ -209,22 +212,62 @@ internal fun AlarmRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(38.dp),
+                .height(35.dp),
             verticalAlignment = Alignment.Top,
         ) {
-            AlarmInfoColumn(
-                label = "목적지",
-                value = alarm.destination,
-                valueColor = colors.primaryText,
-                modifier = Modifier.weight(1f),
-            )
-            AlarmInfoColumn(
-                label = "제한시간",
-                value = "${alarm.timeLimitMinutes}분",
-                valueColor = MaterialTheme.colorScheme.primary,
-                horizontalAlignment = Alignment.End,
-            )
+            Row(
+                modifier = Modifier
+                    .width(183.dp)
+                    .padding(horizontal = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                AlarmInfoColumn(
+                    label = "목적지",
+                    value = alarm.destination,
+                    valueColor = colors.primaryText,
+                    modifier = Modifier.width(70.dp),
+                )
+                AlarmInfoColumn(
+                    label = "제한시간",
+                    value = "${alarm.timeLimitMinutes}분",
+                    valueColor = MaterialTheme.colorScheme.primary,
+                    horizontalAlignment = Alignment.End,
+                )
+            }
+
+            Spacer(Modifier.weight(1f))
+
+            AlarmDeleteButton(onClick = onDelete)
         }
+    }
+}
+
+@Composable
+private fun AlarmDeleteButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = homeAlarmColors()
+
+    Box(
+        modifier = modifier
+            .size(24.dp)
+            .clickable(
+                role = Role.Button,
+                onClickLabel = "알람 삭제",
+                onClick = onClick,
+            )
+            .semantics {
+                contentDescription = "알람 삭제"
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = painterResource(HomeAlarmDeleteIconResource),
+            contentDescription = null,
+            tint = colors.primaryText,
+            modifier = Modifier.size(width = 14.dp, height = 18.dp),
+        )
     }
 }
 
@@ -392,9 +435,9 @@ private fun AlarmInfoColumn(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.bodyLarge.copy(
-                fontSize = if (label == "목적지") 16.sp else 14.sp,
-                lineHeight = if (label == "목적지") 20.sp else 18.sp,
-                fontWeight = if (label == "목적지") FontWeight.ExtraBold else FontWeight.Bold,
+                fontSize = 16.sp,
+                lineHeight = 20.sp,
+                fontWeight = FontWeight.ExtraBold,
             ),
         )
     }
@@ -543,6 +586,7 @@ private fun DarkAlarmRowPreview() {
                 alarm = previewAlarm(isEnabled = true),
                 onClick = {},
                 onEnabledChange = {},
+                onDelete = {},
             )
         }
     }
@@ -561,6 +605,7 @@ private fun LightAlarmRowPreview() {
                 alarm = previewAlarm(isEnabled = false),
                 onClick = {},
                 onEnabledChange = {},
+                onDelete = {},
             )
         }
     }

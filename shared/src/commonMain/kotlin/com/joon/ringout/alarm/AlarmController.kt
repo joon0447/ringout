@@ -20,6 +20,7 @@ data class AlarmScheduleRequest(
 class AlarmController(
     val schedule: (AlarmScheduleRequest) -> Unit,
     val setEnabled: (alarmId: String, enabled: Boolean) -> Unit,
+    val deleteAlarm: (alarmId: String) -> Boolean,
     val savedAlarms: List<SavedAlarmSchedule> = emptyList(),
     val ensureFullScreenAccess: () -> Unit = {},
 )

@@ -225,8 +225,21 @@ actual fun rememberAlarmController(
                             currentOnError.value(
                                 error.message ?: "알람 상태를 변경하지 못했습니다.",
                             )
-                        }
+                    }
                 }
+            },
+            deleteAlarm = { alarmId ->
+                val action = pendingAction.value
+                if (action is PendingAlarmAction.Enable && action.alarmId == alarmId) {
+                    pendingAction.value = null
+                }
+                runCatching {
+                    scheduler.delete(alarmId)
+                }.onFailure { error ->
+                    currentOnError.value(
+                        error.message ?: "알람을 삭제하지 못했습니다.",
+                    )
+                }.isSuccess
             },
             savedAlarms = scheduler.loadAll(),
             ensureFullScreenAccess = {
@@ -319,6 +332,17 @@ internal class AndroidAlarmScheduler(private val context: Context) {
         }
     }
 
+    fun delete(alarmId: String) {
+        cancel(alarmId)
+        check(
+            preferences.edit()
+                .remove(alarmId)
+                .commit(),
+        ) {
+            "알람을 삭제하지 못했습니다."
+        }
+    }
+
     fun onTriggered(alarmId: String) {
         val storedAlarm = load(alarmId) ?: return
         val request = storedAlarm.request
@@ -383,9 +407,21 @@ internal class AndroidAlarmScheduler(private val context: Context) {
                 data = Uri.parse("ringout://alarm/${Uri.encode(alarmId)}")
             },
             PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE,
-        ) ?: return
-        alarmManager.cancel(operation)
-        operation.cancel()
+        )
+        operation?.let {
+            alarmManager.cancel(it)
+            it.cancel()
+        }
+
+        PendingIntent.getActivity(
+            context,
+            alarmId.hashCode() xor Int.MIN_VALUE,
+            Intent(context, AlarmRingingActivity::class.java).apply {
+                action = AlarmRuntime.ACTION_RING
+                data = Uri.parse("ringout://alarm/${Uri.encode(alarmId)}")
+            },
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE,
+        )?.cancel()
     }
 
     private fun save(storedAlarm: StoredAlarm) {

@@ -139,7 +139,7 @@ private fun RingoutAppContent(
     if (alarmScheduleError != null) {
         AlertDialog(
             onDismissRequest = { alarmScheduleError = null },
-            title = { Text("알람을 예약할 수 없습니다") },
+            title = { Text("알람을 처리할 수 없습니다") },
             text = { Text(alarmScheduleError.orEmpty()) },
             confirmButton = {
                 TextButton(onClick = { alarmScheduleError = null }) {
@@ -188,6 +188,11 @@ private fun RingoutAppContent(
                 alarmController.setEnabled(alarmId, enabled)
                 alarms = visibleAlarms.map { alarm ->
                     if (alarm.id == alarmId) alarm.copy(isEnabled = enabled) else alarm
+                }
+            },
+            onAlarmDelete = { alarmId ->
+                if (alarmController.deleteAlarm(alarmId)) {
+                    alarms = visibleAlarms.filterNot { alarm -> alarm.id == alarmId }
                 }
             },
             onSettingsClick = { screenName = AppScreen.Settings.name },

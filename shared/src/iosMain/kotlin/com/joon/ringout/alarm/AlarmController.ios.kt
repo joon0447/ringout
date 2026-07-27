@@ -14,6 +14,7 @@ actual fun rememberAlarmController(
         AlarmController(
             schedule = { currentOnError.value("알람 예약은 현재 Android에서 지원됩니다.") },
             setEnabled = { _, _ -> },
+            deleteAlarm = { true },
         )
     }
 }
