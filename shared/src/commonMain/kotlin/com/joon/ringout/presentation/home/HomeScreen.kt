@@ -1,6 +1,7 @@
 package com.joon.ringout.presentation.home
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.joon.ringout.RingoutTheme
@@ -45,8 +46,11 @@ fun HomeScreen(
         return
     }
 
+    val orderedAlarms = remember(alarms) {
+        enabledAlarmsFirst(alarms)
+    }
     HomeAlarmListState(
-        alarms = alarms,
+        alarms = orderedAlarms,
         nextAlarmDescription = rememberNextAlarmDescription(alarms),
         onAddAlarm = onAddAlarm,
         onAlarmClick = onAlarmClick,
@@ -56,6 +60,11 @@ fun HomeScreen(
         activeAlarmMission = activeAlarmMission,
         onActiveAlarmMissionExpired = onActiveAlarmMissionExpired,
     )
+}
+
+internal fun enabledAlarmsFirst(alarms: List<HomeAlarm>): List<HomeAlarm> {
+    val (enabledAlarms, disabledAlarms) = alarms.partition(HomeAlarm::isEnabled)
+    return enabledAlarms + disabledAlarms
 }
 
 @Preview(name = "Dark empty Home", widthDp = 402, heightDp = 941)
