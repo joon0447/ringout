@@ -19,6 +19,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,8 +40,10 @@ import androidx.compose.ui.unit.sp
 import com.joon.ringout.LocalRingoutThemeMode
 import com.joon.ringout.RingoutTheme
 import com.joon.ringout.ThemeMode
+import com.joon.ringout.alarm.ActiveAlarmMission
 import com.joon.ringout.presentation.home.HomeAlarm
 import com.joon.ringout.presentation.toTwelveHourDisplay
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.painterResource
 import ringout.shared.generated.resources.Res
 import ringout.shared.generated.resources.home_add
@@ -44,6 +52,7 @@ import ringout.shared.generated.resources.home_settings_light
 import ringout.shared.generated.resources.home_toggle_off
 import ringout.shared.generated.resources.home_toggle_on_dark
 import ringout.shared.generated.resources.home_toggle_on_light
+import kotlin.time.Clock
 
 @Composable
 internal fun AlarmListHeader(
@@ -220,12 +229,145 @@ internal fun AlarmRow(
 }
 
 @Composable
+internal fun rememberActiveAlarmMissionRemainingSeconds(
+    mission: ActiveAlarmMission,
+    onExpired: () -> Unit,
+): Long {
+    var remainingSeconds by remember(
+        mission.alarmId,
+        mission.expiresAtEpochMillis,
+    ) {
+        mutableStateOf(
+            remainingAlarmMissionSeconds(
+                expiresAtEpochMillis = mission.expiresAtEpochMillis,
+                nowEpochMillis = Clock.System.now().toEpochMilliseconds(),
+            ),
+        )
+    }
+    val currentOnExpired by rememberUpdatedState(onExpired)
+
+    LaunchedEffect(
+        mission.alarmId,
+        mission.expiresAtEpochMillis,
+    ) {
+        while (true) {
+            val nowEpochMillis = Clock.System.now().toEpochMilliseconds()
+            remainingSeconds = remainingAlarmMissionSeconds(
+                expiresAtEpochMillis = mission.expiresAtEpochMillis,
+                nowEpochMillis = nowEpochMillis,
+            )
+            if (remainingSeconds == 0L) {
+                currentOnExpired()
+                break
+            }
+
+            val remainingMillis =
+                (mission.expiresAtEpochMillis - nowEpochMillis).coerceAtLeast(1L)
+            delay(remainingMillis.coerceAtMost(CountdownRefreshIntervalMillis))
+        }
+    }
+
+    return remainingSeconds
+}
+
+@Composable
+internal fun ActiveAlarmMissionRow(
+    mission: ActiveAlarmMission,
+    remainingSeconds: Long,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(20.dp)
+    val countdown = formatAlarmMissionRemainingTime(remainingSeconds)
+    val cardColor = MaterialTheme.colorScheme.primary
+    val cardContentColor = MaterialTheme.colorScheme.onPrimary
+    val cardSupportingColor = cardContentColor.copy(alpha = 0.65f)
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(cardColor)
+            .semantics(mergeDescendants = true) {
+                contentDescription =
+                    "${mission.limitMinutes}분 제한시간, 남은 시간 $countdown, " +
+                    "목적지 ${mission.destinationName}"
+            }
+            .padding(horizontal = 20.dp, vertical = 10.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+        ) {
+            Text(
+                text = "남은 제한시간",
+                color = cardSupportingColor,
+                maxLines = 1,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 11.sp,
+                    lineHeight = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                ),
+            )
+            Text(
+                text = countdown,
+                color = cardContentColor,
+                maxLines = 1,
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontSize = 28.sp,
+                    lineHeight = 30.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
+            )
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(38.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            AlarmInfoColumn(
+                label = "목적지",
+                value = mission.destinationName,
+                labelColor = cardSupportingColor,
+                valueColor = cardContentColor,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+internal fun remainingAlarmMissionSeconds(
+    expiresAtEpochMillis: Long,
+    nowEpochMillis: Long,
+): Long {
+    val remainingMillis = expiresAtEpochMillis - nowEpochMillis
+    return if (remainingMillis <= 0L) {
+        0L
+    } else {
+        ((remainingMillis - 1L) / MillisecondsPerSecond) + 1L
+    }
+}
+
+internal fun formatAlarmMissionRemainingTime(remainingSeconds: Long): String {
+    val safeRemainingSeconds = remainingSeconds.coerceAtLeast(0L)
+    val minutes = safeRemainingSeconds / SecondsPerMinute
+    val seconds = safeRemainingSeconds % SecondsPerMinute
+    return "${minutes.toString().padStart(2, '0')}:" +
+        seconds.toString().padStart(2, '0')
+}
+
+@Composable
 private fun AlarmInfoColumn(
     label: String,
     value: String,
     valueColor: Color,
     modifier: Modifier = Modifier,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
+    labelColor: Color? = null,
 ) {
     val colors = homeAlarmColors()
 
@@ -235,7 +377,7 @@ private fun AlarmInfoColumn(
     ) {
         Text(
             text = label,
-            color = colors.secondaryText,
+            color = labelColor ?: colors.secondaryText,
             maxLines = 1,
             style = MaterialTheme.typography.labelSmall.copy(
                 fontSize = 11.sp,
@@ -350,6 +492,44 @@ internal data class HomeAlarmColors(
 internal val SecondaryText = Color(0xFF6E756F)
 internal val Orange = Color(0xFFFF6D2E)
 
+private const val CountdownRefreshIntervalMillis = 1_000L
+private const val MillisecondsPerSecond = 1_000L
+private const val SecondsPerMinute = 60L
+
+@Preview
+@Composable
+private fun DarkActiveAlarmMissionRowPreview() {
+    RingoutTheme(themeMode = ThemeMode.Dark) {
+        Box(
+            modifier = Modifier
+                .background(Color.Black)
+                .padding(20.dp),
+        ) {
+            ActiveAlarmMissionRow(
+                mission = previewActiveAlarmMission(),
+                remainingSeconds = 12 * SecondsPerMinute,
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun LightActiveAlarmMissionRowPreview() {
+    RingoutTheme(themeMode = ThemeMode.Light) {
+        Box(
+            modifier = Modifier
+                .background(Color.White)
+                .padding(20.dp),
+        ) {
+            ActiveAlarmMissionRow(
+                mission = previewActiveAlarmMission(),
+                remainingSeconds = 12 * SecondsPerMinute,
+            )
+        }
+    }
+}
+
 @Preview
 @Composable
 private fun DarkAlarmRowPreview() {
@@ -394,4 +574,11 @@ private fun previewAlarm(isEnabled: Boolean) = HomeAlarm(
     timeLimitMinutes = 12,
     isEnabled = isEnabled,
     selectedDays = listOf("토", "일"),
+)
+
+private fun previewActiveAlarmMission() = ActiveAlarmMission(
+    alarmId = "preview-active-alarm",
+    destinationName = "헬스장",
+    limitMinutes = 12,
+    expiresAtEpochMillis = 0L,
 )

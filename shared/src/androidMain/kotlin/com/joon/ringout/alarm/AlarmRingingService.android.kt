@@ -34,6 +34,7 @@ class AlarmRingingService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == AlarmRuntime.ACTION_STOP) {
+            ActiveAlarmMissionStore(applicationContext).saveFrom(intent)
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
             return START_NOT_STICKY
@@ -75,13 +76,10 @@ class AlarmRingingService : Service() {
             AlarmRingingActivity.intentFromRuntime(this, intent),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val stopIntent = PendingIntent.getService(
+        val stopIntent = PendingIntent.getActivity(
             this,
             alarmId.hashCode(),
-            Intent(this, AlarmRingingService::class.java).apply {
-                action = AlarmRuntime.ACTION_STOP
-                data = Uri.parse("ringout://alarm/${Uri.encode(alarmId)}/stop")
-            },
+            AlarmRingingActivity.dismissIntentFromRuntime(this, intent),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         val contentText = destination.takeIf(String::isNotBlank)

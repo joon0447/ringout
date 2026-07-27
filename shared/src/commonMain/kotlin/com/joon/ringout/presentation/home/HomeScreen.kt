@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.joon.ringout.RingoutTheme
 import com.joon.ringout.ThemeMode
+import com.joon.ringout.alarm.ActiveAlarmMission
 import com.joon.ringout.presentation.home.components.HomeAlarmListState
 import com.joon.ringout.presentation.home.components.HomeEmptyState
 
@@ -32,8 +33,10 @@ fun HomeScreen(
     onAlarmEnabledChange: (String, Boolean) -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
+    activeAlarmMission: ActiveAlarmMission? = null,
+    onActiveAlarmMissionExpired: () -> Unit = {},
 ) {
-    if (alarms.isEmpty()) {
+    if (alarms.isEmpty() && activeAlarmMission == null) {
         HomeEmptyState(
             onAddAlarm = onAddAlarm,
             onSettingsClick = onSettingsClick,
@@ -50,6 +53,8 @@ fun HomeScreen(
         onAlarmEnabledChange = onAlarmEnabledChange,
         onSettingsClick = onSettingsClick,
         modifier = modifier,
+        activeAlarmMission = activeAlarmMission,
+        onActiveAlarmMissionExpired = onActiveAlarmMissionExpired,
     )
 }
 

@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.joon.ringout.alarm.ActiveAlarmMission
 import com.joon.ringout.presentation.home.HomeAlarm
 
 @Composable
@@ -29,8 +30,18 @@ internal fun HomeAlarmListState(
     onAlarmEnabledChange: (String, Boolean) -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
+    activeAlarmMission: ActiveAlarmMission? = null,
+    onActiveAlarmMissionExpired: () -> Unit = {},
 ) {
     val colors = homeAlarmColors()
+    val activeAlarmMissionRemainingSeconds = if (activeAlarmMission != null) {
+        rememberActiveAlarmMissionRemainingSeconds(
+            mission = activeAlarmMission,
+            onExpired = onActiveAlarmMissionExpired,
+        )
+    } else {
+        null
+    }
 
     Column(
         modifier = modifier
@@ -63,6 +74,18 @@ internal fun HomeAlarmListState(
                     contentPadding = PaddingValues(bottom = 88.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
+                    if (
+                        activeAlarmMission != null &&
+                        activeAlarmMissionRemainingSeconds != null
+                    ) {
+                        item(key = "active-alarm-mission-${activeAlarmMission.alarmId}") {
+                            ActiveAlarmMissionRow(
+                                mission = activeAlarmMission,
+                                remainingSeconds = activeAlarmMissionRemainingSeconds,
+                            )
+                        }
+                    }
+
                     items(
                         items = alarms,
                         key = HomeAlarm::id,

@@ -3,6 +3,7 @@ package com.joon.ringout.alarm
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
@@ -20,6 +21,10 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 class AlarmRingingActivity : ComponentActivity() {
+    private val activeAlarmMissionStore by lazy {
+        ActiveAlarmMissionStore(applicationContext)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(
@@ -30,6 +35,10 @@ class AlarmRingingActivity : ComponentActivity() {
             ),
         )
         super.onCreate(savedInstanceState)
+        if (intent.action == AlarmRuntime.ACTION_STOP) {
+            stopAlarmAndOpenApp()
+            return
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
@@ -69,7 +78,17 @@ class AlarmRingingActivity : ComponentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        when (intent.action) {
+            AlarmRuntime.ACTION_STOP -> stopAlarmAndOpenApp()
+            AlarmRuntime.ACTION_RING -> recreate()
+        }
+    }
+
     private fun stopAlarmAndOpenApp() {
+        activeAlarmMissionStore.saveFrom(intent)
         stopService(
             Intent(this, AlarmRingingService::class.java).apply {
                 action = AlarmRuntime.ACTION_STOP
@@ -111,5 +130,21 @@ class AlarmRingingActivity : ComponentActivity() {
                         Intent.FLAG_ACTIVITY_SINGLE_TOP,
                 )
             }
+
+        fun dismissIntentFromRuntime(context: Context, source: Intent): Intent {
+            val alarmId = source.getStringExtra(AlarmRuntime.EXTRA_ALARM_ID).orEmpty()
+            return Intent(context, AlarmRingingActivity::class.java).apply {
+                action = AlarmRuntime.ACTION_STOP
+                replaceExtras(source)
+                data = Uri.parse(
+                    "ringout://alarm/${Uri.encode(alarmId)}/stop",
+                )
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP,
+                )
+            }
+        }
     }
 }

@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.joon.ringout.alarm.ActiveAlarmMission
 import com.joon.ringout.alarm.AlarmScheduleRequest
 import com.joon.ringout.alarm.rememberAlarmController
 import com.joon.ringout.presentation.alarmsound.AlarmSoundScreen
@@ -30,7 +31,11 @@ import kotlinx.coroutines.delay
 import kotlin.random.Random
 
 @Composable
-fun App(appVersion: String = "") {
+fun App(
+    appVersion: String = "",
+    activeAlarmMission: ActiveAlarmMission? = null,
+    onActiveAlarmMissionExpired: () -> Unit = {},
+) {
     val themeController = rememberThemeController()
     var isSplashVisible by rememberSaveable { mutableStateOf(true) }
 
@@ -48,6 +53,8 @@ fun App(appVersion: String = "") {
             RingoutAppContent(
                 themeMode = themeController.themeMode,
                 appVersion = appVersion,
+                activeAlarmMission = activeAlarmMission,
+                onActiveAlarmMissionExpired = onActiveAlarmMissionExpired,
                 onThemeModeChange = themeController::setThemeMode,
             )
         }
@@ -58,6 +65,8 @@ fun App(appVersion: String = "") {
 private fun RingoutAppContent(
     themeMode: ThemeMode,
     appVersion: String,
+    activeAlarmMission: ActiveAlarmMission?,
+    onActiveAlarmMissionExpired: () -> Unit,
     onThemeModeChange: (ThemeMode) -> Unit,
 ) {
     var destinationName by rememberSaveable { mutableStateOf(DefaultDestinationSelection.name) }
@@ -120,6 +129,13 @@ private fun RingoutAppContent(
         alarmController.ensureFullScreenAccess()
     }
 
+    LaunchedEffect(activeAlarmMission?.expiresAtEpochMillis) {
+        if (activeAlarmMission != null) {
+            editingAlarmId = null
+            screenName = AppScreen.Home.name
+        }
+    }
+
     if (alarmScheduleError != null) {
         AlertDialog(
             onDismissRequest = { alarmScheduleError = null },
@@ -136,6 +152,8 @@ private fun RingoutAppContent(
     when (screen) {
         AppScreen.Home -> HomeScreen(
             alarms = visibleAlarms,
+            activeAlarmMission = activeAlarmMission,
+            onActiveAlarmMissionExpired = onActiveAlarmMissionExpired,
             onAddAlarm = {
                 editingAlarmId = null
                 destinationName = DefaultDestinationSelection.name
