@@ -1,5 +1,6 @@
 package com.joon.ringout
 
+import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -13,10 +14,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import com.joon.ringout.alarm.ActiveAlarmMission
 import com.joon.ringout.alarm.ActiveAlarmMissionStore
+import com.joon.ringout.alarm.AlarmMissionCoordinator
 
 class MainActivity : ComponentActivity() {
     private lateinit var activeAlarmMissionStore: ActiveAlarmMissionStore
+    private lateinit var alarmMissionCoordinator: AlarmMissionCoordinator
     private var activeAlarmMission by mutableStateOf<ActiveAlarmMission?>(null)
+    private val activeAlarmMissionPreferenceListener =
+        SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+            activeAlarmMission = activeAlarmMissionStore.read()
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge(
@@ -29,25 +36,36 @@ class MainActivity : ComponentActivity() {
         )
         super.onCreate(savedInstanceState)
         activeAlarmMissionStore = ActiveAlarmMissionStore(applicationContext)
+        alarmMissionCoordinator = AlarmMissionCoordinator(applicationContext)
         activeAlarmMission = activeAlarmMissionStore.read()
 
         setContent {
             App(
                 appVersion = BuildConfig.VERSION_NAME,
                 activeAlarmMission = activeAlarmMission,
-                onActiveAlarmMissionExpired = ::clearActiveAlarmMission,
+                onActiveAlarmMissionExpired = ::handleActiveAlarmMissionExpired,
             )
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        activeAlarmMissionStore.registerListener(activeAlarmMissionPreferenceListener)
     }
 
     override fun onResume() {
         super.onResume()
         activeAlarmMission = activeAlarmMissionStore.read()
+        alarmMissionCoordinator.resumeTracking()
     }
 
-    private fun clearActiveAlarmMission() {
-        activeAlarmMissionStore.clear()
-        activeAlarmMission = null
+    override fun onStop() {
+        activeAlarmMissionStore.unregisterListener(activeAlarmMissionPreferenceListener)
+        super.onStop()
+    }
+
+    private fun handleActiveAlarmMissionExpired() {
+        alarmMissionCoordinator.handleDeadline(activeAlarmMission?.occurrenceId)
     }
 }
 

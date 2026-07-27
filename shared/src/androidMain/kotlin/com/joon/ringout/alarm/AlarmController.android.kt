@@ -33,9 +33,14 @@ actual fun rememberAlarmController(
     val permissionPreferences = remember(context) {
         context.getSharedPreferences(PERMISSION_PREFERENCES_NAME, Context.MODE_PRIVATE)
     }
-    val pendingRequest = remember { mutableStateOf<AlarmScheduleRequest?>(null) }
+    val pendingAction = remember { mutableStateOf<PendingAlarmAction?>(null) }
     val currentOnScheduled = rememberUpdatedState(onScheduled)
     val currentOnError = rememberUpdatedState(onError)
+
+    fun failPendingAction(message: String) {
+        pendingAction.value = null
+        currentOnError.value(message)
+    }
 
     fun requestFullScreenPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return
@@ -51,38 +56,104 @@ actual fun rememberAlarmController(
     }
 
     fun scheduleNow(request: AlarmScheduleRequest) {
+        if (!context.hasMissionFineLocationPermission()) {
+            failPendingAction(EXACT_LOCATION_PERMISSION_ERROR)
+            return
+        }
+        if (!context.isMissionLocationEnabled()) {
+            failPendingAction(LOCATION_SERVICES_ERROR)
+            return
+        }
         runCatching { scheduler.schedule(request) }
             .onSuccess {
-                pendingRequest.value = null
+                pendingAction.value = null
                 currentOnScheduled.value(request)
                 requestFullScreenPermissionIfNeeded()
             }
             .onFailure { error ->
-                currentOnError.value(error.message ?: "알람 예약 중 오류가 발생했습니다.")
+                failPendingAction(error.message ?: "알람 예약 중 오류가 발생했습니다.")
             }
+    }
+
+    fun enableNow(alarmId: String) {
+        val permissionError = when {
+            needsNotificationPermission(context) -> NOTIFICATION_PERMISSION_ERROR
+            !context.hasMissionFineLocationPermission() -> EXACT_LOCATION_PERMISSION_ERROR
+            !context.isMissionLocationEnabled() -> LOCATION_SERVICES_ERROR
+            !Settings.canDrawOverlays(context) -> OVERLAY_PERMISSION_ERROR
+            !canScheduleExactAlarms(context) -> EXACT_ALARM_PERMISSION_ERROR
+            else -> null
+        }
+        if (permissionError != null) {
+            failPendingAction(permissionError)
+            return
+        }
+        runCatching { scheduler.setEnabled(alarmId, true) }
+            .onSuccess { pendingAction.value = null }
+            .onFailure { error ->
+                failPendingAction(error.message ?: "알람 상태를 변경하지 못했습니다.")
+            }
+    }
+
+    fun completePendingAction() {
+        when (val action = pendingAction.value) {
+            is PendingAlarmAction.Schedule -> scheduleNow(action.request)
+            is PendingAlarmAction.Enable -> enableNow(action.alarmId)
+            null -> Unit
+        }
     }
 
     val exactAlarmPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult(),
     ) {
-        val request = pendingRequest.value ?: return@rememberLauncherForActivityResult
+        if (pendingAction.value == null) return@rememberLauncherForActivityResult
         if (canScheduleExactAlarms(context)) {
-            scheduleNow(request)
+            completePendingAction()
         } else {
-            currentOnError.value("정확한 알람 권한을 허용해 주세요.")
+            failPendingAction(EXACT_ALARM_PERMISSION_ERROR)
         }
     }
     val overlayPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult(),
     ) {
-        val request = pendingRequest.value ?: return@rememberLauncherForActivityResult
+        if (pendingAction.value == null) return@rememberLauncherForActivityResult
         if (!Settings.canDrawOverlays(context)) {
-            currentOnError.value(
-                "화면이 켜져 있어도 전체 화면 알람을 표시하려면 " +
-                    "'다른 앱 위에 표시' 권한이 필요합니다.",
-            )
+            failPendingAction(OVERLAY_PERMISSION_ERROR)
         } else if (canScheduleExactAlarms(context)) {
-            scheduleNow(request)
+            completePendingAction()
+        } else {
+            exactAlarmPermissionLauncher.launch(exactAlarmPermissionIntent(context))
+        }
+    }
+    val locationServicesLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult(),
+    ) {
+        if (pendingAction.value == null) return@rememberLauncherForActivityResult
+        if (!context.isMissionLocationEnabled()) {
+            failPendingAction(LOCATION_SERVICES_ERROR)
+        } else if (!Settings.canDrawOverlays(context)) {
+            overlayPermissionLauncher.launch(overlayPermissionIntent(context))
+        } else if (canScheduleExactAlarms(context)) {
+            completePendingAction()
+        } else {
+            exactAlarmPermissionLauncher.launch(exactAlarmPermissionIntent(context))
+        }
+    }
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+    ) { permissions ->
+        if (pendingAction.value == null) return@rememberLauncherForActivityResult
+        val fineLocationGranted =
+            permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                context.hasMissionFineLocationPermission()
+        if (!fineLocationGranted) {
+            failPendingAction(EXACT_LOCATION_PERMISSION_ERROR)
+        } else if (!context.isMissionLocationEnabled()) {
+            locationServicesLauncher.launch(missionLocationSettingsIntent())
+        } else if (!Settings.canDrawOverlays(context)) {
+            overlayPermissionLauncher.launch(overlayPermissionIntent(context))
+        } else if (canScheduleExactAlarms(context)) {
+            completePendingAction()
         } else {
             exactAlarmPermissionLauncher.launch(exactAlarmPermissionIntent(context))
         }
@@ -90,48 +161,72 @@ actual fun rememberAlarmController(
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
     ) { granted ->
-        val request = pendingRequest.value ?: return@rememberLauncherForActivityResult
+        if (pendingAction.value == null) return@rememberLauncherForActivityResult
         if (!granted) {
-            currentOnError.value("알람 화면과 소리를 표시하려면 알림 권한이 필요합니다.")
+            failPendingAction(NOTIFICATION_PERMISSION_ERROR)
+        } else if (!context.hasMissionFineLocationPermission()) {
+            locationPermissionLauncher.launch(locationPermissions)
+        } else if (!context.isMissionLocationEnabled()) {
+            locationServicesLauncher.launch(missionLocationSettingsIntent())
         } else if (!Settings.canDrawOverlays(context)) {
             overlayPermissionLauncher.launch(overlayPermissionIntent(context))
         } else if (canScheduleExactAlarms(context)) {
-            scheduleNow(request)
+            completePendingAction()
         } else {
             exactAlarmPermissionLauncher.launch(exactAlarmPermissionIntent(context))
+        }
+    }
+
+    fun continuePermissionChain() {
+        when {
+            needsNotificationPermission(context) -> {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+            !context.hasMissionFineLocationPermission() -> {
+                locationPermissionLauncher.launch(locationPermissions)
+            }
+            !context.isMissionLocationEnabled() -> {
+                locationServicesLauncher.launch(missionLocationSettingsIntent())
+            }
+            !Settings.canDrawOverlays(context) -> {
+                overlayPermissionLauncher.launch(overlayPermissionIntent(context))
+            }
+            !canScheduleExactAlarms(context) -> {
+                exactAlarmPermissionLauncher.launch(exactAlarmPermissionIntent(context))
+            }
+            else -> completePendingAction()
         }
     }
 
     return remember(
         scheduler,
         notificationPermissionLauncher,
+        locationPermissionLauncher,
+        locationServicesLauncher,
         overlayPermissionLauncher,
         exactAlarmPermissionLauncher,
     ) {
         AlarmController(
             schedule = { request ->
-                pendingRequest.value = request
-                when {
-                    needsNotificationPermission(context) -> {
-                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                    }
-                    !Settings.canDrawOverlays(context) -> {
-                        overlayPermissionLauncher.launch(overlayPermissionIntent(context))
-                    }
-                    !canScheduleExactAlarms(context) -> {
-                        exactAlarmPermissionLauncher.launch(exactAlarmPermissionIntent(context))
-                    }
-                    else -> scheduleNow(request)
-                }
+                pendingAction.value = PendingAlarmAction.Schedule(request)
+                continuePermissionChain()
             },
             setEnabled = { alarmId, enabled ->
-                if (enabled && !Settings.canDrawOverlays(context)) {
-                    overlayPermissionLauncher.launch(overlayPermissionIntent(context))
-                }
-                runCatching { scheduler.setEnabled(alarmId, enabled) }
-                    .onFailure { error ->
-                        currentOnError.value(error.message ?: "알람 상태를 변경하지 못했습니다.")
+                if (enabled) {
+                    pendingAction.value = PendingAlarmAction.Enable(alarmId)
+                    continuePermissionChain()
+                } else {
+                    val action = pendingAction.value
+                    if (action is PendingAlarmAction.Enable && action.alarmId == alarmId) {
+                        pendingAction.value = null
                     }
+                    runCatching { scheduler.setEnabled(alarmId, false) }
+                        .onFailure { error ->
+                            currentOnError.value(
+                                error.message ?: "알람 상태를 변경하지 못했습니다.",
+                            )
+                        }
+                }
             },
             savedAlarms = scheduler.loadAll(),
             ensureFullScreenAccess = {
@@ -171,8 +266,27 @@ private fun overlayPermissionIntent(context: Context): Intent =
         data = Uri.parse("package:${context.packageName}")
     }
 
+private val locationPermissions = arrayOf(
+    Manifest.permission.ACCESS_FINE_LOCATION,
+    Manifest.permission.ACCESS_COARSE_LOCATION,
+)
+private const val NOTIFICATION_PERMISSION_ERROR =
+    "알람 화면과 소리를 표시하려면 알림 권한이 필요합니다."
+private const val EXACT_LOCATION_PERMISSION_ERROR =
+    "목적지 도착 확인을 위해 정확한 위치 권한이 필요합니다."
+private const val LOCATION_SERVICES_ERROR = "목적지 도착 확인을 위해 기기 위치를 켜 주세요."
+private const val OVERLAY_PERMISSION_ERROR =
+    "화면이 켜져 있어도 전체 화면 알람을 표시하려면 " +
+        "'다른 앱 위에 표시' 권한이 필요합니다."
+private const val EXACT_ALARM_PERMISSION_ERROR = "정확한 알람 권한을 허용해 주세요."
 private const val PERMISSION_PREFERENCES_NAME = "ringout_permission_prompts"
 private const val KEY_INITIAL_OVERLAY_PERMISSION_REQUESTED = "initial_overlay_permission_requested"
+
+private sealed interface PendingAlarmAction {
+    data class Schedule(val request: AlarmScheduleRequest) : PendingAlarmAction
+
+    data class Enable(val alarmId: String) : PendingAlarmAction
+}
 
 internal class AndroidAlarmScheduler(private val context: Context) {
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
@@ -180,20 +294,27 @@ internal class AndroidAlarmScheduler(private val context: Context) {
 
     fun schedule(request: AlarmScheduleRequest) {
         val enabled = load(request.id)?.enabled ?: true
-        save(StoredAlarm(request = request, enabled = enabled))
         if (enabled) {
             scheduleNext(request, afterMillis = System.currentTimeMillis())
+            save(StoredAlarm(request = request, enabled = true))
         } else {
+            save(StoredAlarm(request = request, enabled = false))
             cancel(request.id)
         }
     }
 
     fun setEnabled(alarmId: String, enabled: Boolean) {
         val storedAlarm = load(alarmId) ?: return
-        save(storedAlarm.copy(enabled = enabled))
         if (enabled) {
-            scheduleNext(storedAlarm.request, afterMillis = System.currentTimeMillis())
+            try {
+                scheduleNext(storedAlarm.request, afterMillis = System.currentTimeMillis())
+                save(storedAlarm.copy(enabled = true))
+            } catch (error: Exception) {
+                save(storedAlarm.copy(enabled = false))
+                throw error
+            }
         } else {
+            save(storedAlarm.copy(enabled = false))
             cancel(alarmId)
         }
     }

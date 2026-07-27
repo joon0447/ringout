@@ -19,13 +19,18 @@ import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.provider.Settings
 
 class AlarmRingingService : Service() {
     private var mediaPlayer: MediaPlayer? = null
     private var vibrator: Vibrator? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var audioFocusRequest: AudioFocusRequest? = null
+    private var isActivelyRinging = false
     private val audioManager by lazy { getSystemService(AudioManager::class.java) }
+    private val ringingSessionStore by lazy {
+        AlarmRingingSessionStore(applicationContext)
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -34,12 +39,34 @@ class AlarmRingingService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == AlarmRuntime.ACTION_STOP) {
-            ActiveAlarmMissionStore(applicationContext).saveFrom(intent)
+            val occurrenceId = intent.getStringExtra(
+                AlarmRuntime.EXTRA_OCCURRENCE_ID,
+            ) ?: return START_NOT_STICKY
+            if (!ringingSessionStore.clearIfCurrent(occurrenceId)) {
+                return START_NOT_STICKY
+            }
             stopForeground(STOP_FOREGROUND_REMOVE)
+            isActivelyRinging = false
             stopSelf()
             return START_NOT_STICKY
         }
         if (intent?.action != AlarmRuntime.ACTION_RING) return START_NOT_STICKY
+        val occurrenceId = intent.getStringExtra(
+            AlarmRuntime.EXTRA_OCCURRENCE_ID,
+        ) ?: return START_NOT_STICKY
+        val missionCoordinator = AlarmMissionCoordinator(applicationContext)
+        val isRetryAlarm = intent.hasExtra(
+            AlarmRuntime.EXTRA_RETRY_SOURCE_OCCURRENCE_ID,
+        )
+        if (isRetryAlarm && !missionCoordinator.isExpectedRetryAlarm(intent)) {
+            if (!isActivelyRinging) {
+                stopSelf(startId)
+            }
+            return START_NOT_STICKY
+        }
+        if (!ringingSessionStore.markRinging(occurrenceId)) {
+            return START_NOT_STICKY
+        }
 
         stopRingingResources()
         val notification = createRingingNotification(intent)
@@ -52,15 +79,36 @@ class AlarmRingingService : Service() {
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
+        isActivelyRinging = true
         acquireWakeLock()
         startAlarmSound(intent)
         startVibration()
+        val retryAlarmConfirmed = missionCoordinator.confirmRetryAlarmStarted(intent)
+        if (isRetryAlarm && !retryAlarmConfirmed) {
+            ringingSessionStore.clearIfCurrent(occurrenceId)
+            stopRingingResources()
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            isActivelyRinging = false
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
+        if (retryAlarmConfirmed && Settings.canDrawOverlays(applicationContext)) {
+            runCatching {
+                startActivity(
+                    AlarmRingingActivity.intentFromRuntime(
+                        context = applicationContext,
+                        source = intent,
+                    ),
+                )
+            }
+        }
         return START_NOT_STICKY
     }
 
     override fun onDestroy() {
         stopRingingResources()
         stopForeground(STOP_FOREGROUND_REMOVE)
+        isActivelyRinging = false
         super.onDestroy()
     }
 
