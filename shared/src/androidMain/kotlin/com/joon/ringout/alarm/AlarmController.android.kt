@@ -179,8 +179,13 @@ internal class AndroidAlarmScheduler(private val context: Context) {
     private val preferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
 
     fun schedule(request: AlarmScheduleRequest) {
-        save(StoredAlarm(request = request, enabled = true))
-        scheduleNext(request, afterMillis = System.currentTimeMillis())
+        val enabled = load(request.id)?.enabled ?: true
+        save(StoredAlarm(request = request, enabled = enabled))
+        if (enabled) {
+            scheduleNext(request, afterMillis = System.currentTimeMillis())
+        } else {
+            cancel(request.id)
+        }
     }
 
     fun setEnabled(alarmId: String, enabled: Boolean) {

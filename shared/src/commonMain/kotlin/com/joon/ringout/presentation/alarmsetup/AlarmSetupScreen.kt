@@ -37,6 +37,9 @@ import com.joon.ringout.presentation.destination.PlatformBackHandler
 fun AlarmSetupScreen(
     destination: String,
     alarmSound: AlarmSoundSelection,
+    initialTime: String = "06:20",
+    initialSelectedDays: List<String> = listOf("월", "화", "수", "금"),
+    initialLimitMinutes: Int = 13,
     onBackClick: () -> Unit,
     onDestinationClick: () -> Unit,
     onAlarmSoundClick: () -> Unit,
@@ -49,10 +52,35 @@ fun AlarmSetupScreen(
     ) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var limitMinutes by rememberSaveable { mutableStateOf(13) }
-    var selectedDaysValue by rememberSaveable { mutableStateOf("월,화,수,금") }
-    var alarmTime by rememberSaveable { mutableStateOf("06:20") }
-    var showTimeDialog by rememberSaveable { mutableStateOf(false) }
+    val initialSelectedDaysValue = initialSelectedDays.joinToString(",")
+    var limitMinutes by rememberSaveable(
+        initialTime,
+        initialSelectedDaysValue,
+        initialLimitMinutes,
+    ) {
+        mutableStateOf(initialLimitMinutes)
+    }
+    var selectedDaysValue by rememberSaveable(
+        initialTime,
+        initialSelectedDaysValue,
+        initialLimitMinutes,
+    ) {
+        mutableStateOf(initialSelectedDaysValue)
+    }
+    var alarmTime by rememberSaveable(
+        initialTime,
+        initialSelectedDaysValue,
+        initialLimitMinutes,
+    ) {
+        mutableStateOf(initialTime)
+    }
+    var showTimeDialog by rememberSaveable(
+        initialTime,
+        initialSelectedDaysValue,
+        initialLimitMinutes,
+    ) {
+        mutableStateOf(false)
+    }
     val selectedDays = selectedDaysValue.split(",").filter(String::isNotBlank)
     val colors = alarmSetupColors()
 

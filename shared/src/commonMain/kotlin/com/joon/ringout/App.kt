@@ -64,9 +64,10 @@ private fun RingoutAppContent(
     var destinationAddress by rememberSaveable { mutableStateOf(DefaultDestinationSelection.address) }
     var destinationLatitude by rememberSaveable { mutableStateOf(DefaultDestinationSelection.latitude) }
     var destinationLongitude by rememberSaveable { mutableStateOf(DefaultDestinationSelection.longitude) }
-    var alarmSoundName by rememberSaveable { mutableStateOf("Ring Ring Ring") }
+    var alarmSoundName by rememberSaveable { mutableStateOf(DefaultAlarmSoundName) }
     var alarmSoundUri by rememberSaveable { mutableStateOf<String?>(null) }
     var screenName by rememberSaveable { mutableStateOf(AppScreen.Home.name) }
+    var editingAlarmId by rememberSaveable { mutableStateOf<String?>(null) }
     var alarms by remember { mutableStateOf<List<HomeAlarm>?>(null) }
     var alarmScheduleError by rememberSaveable { mutableStateOf<String?>(null) }
     val destination = DestinationSelection(
@@ -82,9 +83,14 @@ private fun RingoutAppContent(
     val screen = AppScreen.valueOf(screenName)
     val alarmController = rememberAlarmController(
         onScheduled = { request ->
-            alarms = alarms.orEmpty()
-                .filterNot { it.id == request.id } +
-                request.toHomeAlarm(enabled = true)
+            val wasEnabled = alarms.orEmpty()
+                .firstOrNull { it.id == request.id }
+                ?.isEnabled
+                ?: true
+            alarms = alarms.orEmpty().replaceOrAppend(
+                request.toHomeAlarm(enabled = wasEnabled),
+            )
+            editingAlarmId = null
             screenName = AppScreen.Home.name
         },
         onError = { alarmScheduleError = it },
@@ -95,6 +101,19 @@ private fun RingoutAppContent(
         }
     }
     val visibleAlarms = alarms ?: savedAlarms
+    val editingAlarm = editingAlarmId?.let { alarmId ->
+        visibleAlarms.firstOrNull { it.id == alarmId }
+    }
+    val alarmSetupScreen = if (editingAlarmId == null) {
+        AppScreen.AddAlarm
+    } else {
+        AppScreen.EditAlarm
+    }
+    val initialSelectedDays = when {
+        editingAlarm == null -> DefaultSelectedDays
+        editingAlarm.repeatEnabled -> editingAlarm.selectedDays
+        else -> emptyList()
+    }
 
     LaunchedEffect(alarmController) {
         if (alarms == null) alarms = savedAlarms
@@ -117,8 +136,36 @@ private fun RingoutAppContent(
     when (screen) {
         AppScreen.Home -> HomeScreen(
             alarms = visibleAlarms,
-            onAddAlarm = { screenName = AppScreen.AddAlarm.name },
-            onAlarmClick = {},
+            onAddAlarm = {
+                editingAlarmId = null
+                destinationName = DefaultDestinationSelection.name
+                destinationAddress = DefaultDestinationSelection.address
+                destinationLatitude = DefaultDestinationSelection.latitude
+                destinationLongitude = DefaultDestinationSelection.longitude
+                alarmSoundName = DefaultAlarmSoundName
+                alarmSoundUri = null
+                screenName = AppScreen.AddAlarm.name
+            },
+            onAlarmClick = { alarmId ->
+                visibleAlarms.firstOrNull { it.id == alarmId }?.let { alarm ->
+                    editingAlarmId = alarm.id
+                    destinationName = alarm.destination.ifBlank {
+                        DefaultDestinationSelection.name
+                    }
+                    destinationAddress = alarm.targetAddress.ifBlank {
+                        DefaultDestinationSelection.address
+                    }
+                    destinationLatitude =
+                        alarm.targetLatitude ?: DefaultDestinationSelection.latitude
+                    destinationLongitude =
+                        alarm.targetLongitude ?: DefaultDestinationSelection.longitude
+                    alarmSoundName = alarm.alarmSoundName.ifBlank {
+                        DefaultAlarmSoundName
+                    }
+                    alarmSoundUri = alarm.alarmSoundUri
+                    screenName = AppScreen.EditAlarm.name
+                }
+            },
             onAlarmEnabledChange = { alarmId, enabled ->
                 alarmController.setEnabled(alarmId, enabled)
                 alarms = visibleAlarms.map { alarm ->
@@ -136,19 +183,27 @@ private fun RingoutAppContent(
         )
 
         AppScreen.AddAlarm,
+        AppScreen.EditAlarm,
         AppScreen.Destination,
         AppScreen.AlarmSound,
         -> Box(Modifier.fillMaxSize()) {
             AlarmSetupScreen(
                 destination = destination.name,
                 alarmSound = alarmSound,
-                onBackClick = { screenName = AppScreen.Home.name },
+                initialTime = editingAlarm?.time ?: DefaultAlarmTime,
+                initialSelectedDays = initialSelectedDays,
+                initialLimitMinutes = editingAlarm?.timeLimitMinutes ?: DefaultLimitMinutes,
+                onBackClick = {
+                    editingAlarmId = null
+                    screenName = AppScreen.Home.name
+                },
                 onDestinationClick = { screenName = AppScreen.Destination.name },
                 onAlarmSoundClick = { screenName = AppScreen.AlarmSound.name },
                 onSaveClick = { time, selectedDays, repeatEnabled, limitMinutes, alarmSound ->
                     alarmController.schedule(
                         AlarmScheduleRequest(
-                            id = "alarm-${Random.nextInt(1, Int.MAX_VALUE)}",
+                            id = editingAlarmId
+                                ?: "alarm-${Random.nextInt(1, Int.MAX_VALUE)}",
                             time = time,
                             selectedDays = selectedDays,
                             repeatEnabled = repeatEnabled,
@@ -167,13 +222,13 @@ private fun RingoutAppContent(
             if (screen == AppScreen.Destination) {
                 DestinationMapScreen(
                     initialSelection = destination,
-                    onBackClick = { screenName = AppScreen.AddAlarm.name },
+                    onBackClick = { screenName = alarmSetupScreen.name },
                     onConfirmClick = { selectedDestination ->
                         destinationName = selectedDestination.name
                         destinationAddress = selectedDestination.address
                         destinationLatitude = selectedDestination.latitude
                         destinationLongitude = selectedDestination.longitude
-                        screenName = AppScreen.AddAlarm.name
+                        screenName = alarmSetupScreen.name
                     },
                 )
             }
@@ -181,11 +236,11 @@ private fun RingoutAppContent(
             if (screen == AppScreen.AlarmSound) {
                 AlarmSoundScreen(
                     selectedSound = alarmSound,
-                    onBackClick = { screenName = AppScreen.AddAlarm.name },
+                    onBackClick = { screenName = alarmSetupScreen.name },
                     onSaveClick = { selectedSound ->
                         alarmSoundName = selectedSound.name
                         alarmSoundUri = selectedSound.uri
-                        screenName = AppScreen.AddAlarm.name
+                        screenName = alarmSetupScreen.name
                     },
                 )
             }
@@ -198,10 +253,16 @@ private const val SplashDurationMillis = 1_200L
 private enum class AppScreen {
     Home,
     AddAlarm,
+    EditAlarm,
     Destination,
     AlarmSound,
     Settings,
 }
+
+private const val DefaultAlarmTime = "06:20"
+private val DefaultSelectedDays = listOf("월", "화", "수", "금")
+private const val DefaultLimitMinutes = 13
+private const val DefaultAlarmSoundName = "Ring Ring Ring"
 
 private fun AlarmScheduleRequest.toHomeAlarm(enabled: Boolean): HomeAlarm = HomeAlarm(
     id = id,
@@ -218,3 +279,12 @@ private fun AlarmScheduleRequest.toHomeAlarm(enabled: Boolean): HomeAlarm = Home
     selectedDays = selectedDays,
     repeatEnabled = repeatEnabled,
 )
+
+private fun List<HomeAlarm>.replaceOrAppend(updatedAlarm: HomeAlarm): List<HomeAlarm> =
+    if (any { it.id == updatedAlarm.id }) {
+        map { alarm ->
+            if (alarm.id == updatedAlarm.id) updatedAlarm else alarm
+        }
+    } else {
+        this + updatedAlarm
+    }
