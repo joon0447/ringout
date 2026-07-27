@@ -14,7 +14,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.joon.ringout.RingoutTheme
 import com.joon.ringout.SystemBarAppearanceEffect
-import com.joon.ringout.rememberThemeController
+import com.joon.ringout.ThemeMode
 import com.joon.ringout.presentation.ringing.AlarmRingingScreen
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -64,9 +64,8 @@ class AlarmRingingActivity : ComponentActivity() {
             .orEmpty()
             .ifBlank { "선택한 목적지" }
         setContent {
-            val themeController = rememberThemeController()
-            SystemBarAppearanceEffect(themeController.themeMode)
-            RingoutTheme(themeMode = themeController.themeMode) {
+            SystemBarAppearanceEffect(ThemeMode.Dark)
+            RingoutTheme(themeMode = ThemeMode.Dark) {
                 AlarmRingingScreen(
                     alarmTime = alarmTime,
                     dateText = currentDateText(),

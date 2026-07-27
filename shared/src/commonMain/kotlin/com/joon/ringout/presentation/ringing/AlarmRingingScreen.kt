@@ -75,24 +75,10 @@ internal fun formatAlarmDisplayTime(value: String): String {
     }
 }
 
-@Preview(widthDp = 402, heightDp = 941)
+@Preview(widthDp = 402, heightDp = 874)
 @Composable
 private fun AlarmRingingScreenDarkPreview() {
     RingoutTheme(themeMode = ThemeMode.Dark) {
-        AlarmRingingScreen(
-            alarmTime = "07:00",
-            dateText = "2026년 7월 23일 목요일",
-            limitMinutes = 30,
-            destinationName = "강남역 2번 출구",
-            onDismissAndNavigateClick = {},
-        )
-    }
-}
-
-@Preview(widthDp = 402, heightDp = 941)
-@Composable
-private fun AlarmRingingScreenLightPreview() {
-    RingoutTheme(themeMode = ThemeMode.Light) {
         AlarmRingingScreen(
             alarmTime = "07:00",
             dateText = "2026년 7월 23일 목요일",

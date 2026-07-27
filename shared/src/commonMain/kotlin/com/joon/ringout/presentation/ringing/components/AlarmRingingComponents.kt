@@ -25,62 +25,32 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.joon.ringout.LocalRingoutThemeMode
-import com.joon.ringout.ThemeMode
-import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import ringout.shared.generated.resources.Res
 import ringout.shared.generated.resources.ringing_bell_dark
-import ringout.shared.generated.resources.ringing_bell_light
 import ringout.shared.generated.resources.ringing_clock
-
-internal val AlarmRingingOrange = Color(0xFFFF6D2E)
 
 internal data class AlarmRingingColors(
     val background: Color,
     val primaryText: Color,
     val secondaryText: Color,
-    val bellResource: DrawableResource,
-    val bellWidth: Dp,
-    val bellHeight: Dp,
 )
 
-@Composable
 internal fun alarmRingingColors(): AlarmRingingColors =
-    if (LocalRingoutThemeMode.current == ThemeMode.Dark) {
-        AlarmRingingColors(
-            background = Color.Black,
-            primaryText = Color.White,
-            secondaryText = Color(0xCCFFFFFF),
-            bellResource = Res.drawable.ringing_bell_dark,
-            bellWidth = 266.dp,
-            bellHeight = 266.dp,
-        )
-    } else {
-        AlarmRingingColors(
-            background = Color(0xFFF9FAFB),
-            primaryText = Color(0xFF111827),
-            secondaryText = Color(0xFF374151),
-            bellResource = Res.drawable.ringing_bell_light,
-            bellWidth = 284.dp,
-            bellHeight = 274.dp,
-        )
-    }
+    AlarmRingingColors(
+        background = Color.Black,
+        primaryText = Color.White,
+        secondaryText = Color.White.copy(alpha = 0.8f),
+    )
 
 @Composable
 internal fun AlarmBellVisual(modifier: Modifier = Modifier) {
-    val colors = alarmRingingColors()
-
     Image(
-        painter = painterResource(colors.bellResource),
+        painter = painterResource(Res.drawable.ringing_bell_dark),
         contentDescription = "알람이 울리고 있어요",
-        modifier = modifier.size(
-            width = colors.bellWidth,
-            height = colors.bellHeight,
-        ),
+        modifier = modifier.size(149.dp),
         contentScale = ContentScale.Fit,
     )
 }
@@ -133,12 +103,13 @@ private fun AlarmLimitBadge(
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(999.dp)
+    val accentColor = MaterialTheme.colorScheme.primary
 
     Row(
         modifier = modifier
             .clip(shape)
-            .background(Color(0x1AFF6D2E))
-            .border(1.dp, AlarmRingingOrange, shape)
+            .background(accentColor.copy(alpha = 0.1f))
+            .border(1.dp, accentColor, shape)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -150,7 +121,7 @@ private fun AlarmLimitBadge(
         )
         Text(
             text = "제한시간 ${limitMinutes}분",
-            color = AlarmRingingOrange,
+            color = accentColor,
             maxLines = 1,
             style = MaterialTheme.typography.titleMedium.copy(
                 fontSize = 18.sp,
@@ -166,12 +137,14 @@ internal fun AlarmDismissButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val accentColor = MaterialTheme.colorScheme.primary
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(64.dp)
             .clip(RoundedCornerShape(32.dp))
-            .background(AlarmRingingOrange)
+            .background(accentColor)
             .clickable(
                 role = Role.Button,
                 onClickLabel = "알람 끄고 목적지로 이동",
