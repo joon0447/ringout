@@ -134,7 +134,7 @@ private fun Double.isValidLongitude(): Boolean = isFinite() && this in -180.0..1
 
 private fun Double.toRadians(): Double = this * PI / 180.0
 
-internal const val DefaultArrivalRadiusMeters = 100.0
+internal const val DefaultArrivalRadiusMeters = 10.0
 internal const val MaximumDeadlineLocationAgeMillis = 30_000L
 internal const val DeadlineLocationAcquisitionTimeoutMillis = 5_000L
 private const val MaximumAcceptedLocationAccuracyMeters = 100.0

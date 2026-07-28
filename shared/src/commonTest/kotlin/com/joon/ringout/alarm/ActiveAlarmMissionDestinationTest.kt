@@ -13,27 +13,26 @@ class ActiveAlarmMissionDestinationTest {
         startedAtEpochMillis = 0L,
         destinationLatitude = 37.5665,
         destinationLongitude = 126.9780,
-        arrivalRadiusMeters = 100.0,
     )
 
     @Test
-    fun acceptsLocationInsideDestinationRadius() {
+    fun acceptsLocationInsideDefaultDestinationRadius() {
         assertTrue(
             mission.hasReachedDestination(
-                latitude = 37.5666,
+                latitude = 37.56654,
                 longitude = 126.9780,
-                accuracyMeters = 15f,
+                accuracyMeters = 5f,
             ),
         )
     }
 
     @Test
-    fun rejectsLocationOutsideDestinationRadius() {
+    fun rejectsLocationOutsideDefaultDestinationRadius() {
         assertFalse(
             mission.hasReachedDestination(
-                latitude = 37.5680,
+                latitude = 37.5666,
                 longitude = 126.9780,
-                accuracyMeters = 15f,
+                accuracyMeters = 5f,
             ),
         )
     }
@@ -44,7 +43,7 @@ class ActiveAlarmMissionDestinationTest {
             mission.hasReachedDestination(
                 latitude = 37.5665,
                 longitude = 126.9780,
-                accuracyMeters = 150f,
+                accuracyMeters = 11f,
             ),
         )
     }
