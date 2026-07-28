@@ -26,8 +26,6 @@ import com.joon.ringout.presentation.destination.DestinationSelection
 import com.joon.ringout.presentation.home.HomeAlarm
 import com.joon.ringout.presentation.home.HomeScreen
 import com.joon.ringout.presentation.settings.SettingsScreen
-import com.joon.ringout.presentation.splash.SplashScreen
-import kotlinx.coroutines.delay
 import kotlin.random.Random
 
 @Composable
@@ -37,27 +35,17 @@ fun App(
     onActiveAlarmMissionExpired: () -> Unit = {},
 ) {
     val themeController = rememberThemeController()
-    var isSplashVisible by rememberSaveable { mutableStateOf(true) }
 
     SystemBarAppearanceEffect(themeController.themeMode)
 
-    LaunchedEffect(Unit) {
-        delay(SplashDurationMillis)
-        isSplashVisible = false
-    }
-
     RingoutTheme(themeMode = themeController.themeMode) {
-        if (isSplashVisible) {
-            SplashScreen(themeMode = themeController.themeMode)
-        } else {
-            RingoutAppContent(
-                themeMode = themeController.themeMode,
-                appVersion = appVersion,
-                activeAlarmMission = activeAlarmMission,
-                onActiveAlarmMissionExpired = onActiveAlarmMissionExpired,
-                onThemeModeChange = themeController::setThemeMode,
-            )
-        }
+        RingoutAppContent(
+            themeMode = themeController.themeMode,
+            appVersion = appVersion,
+            activeAlarmMission = activeAlarmMission,
+            onActiveAlarmMissionExpired = onActiveAlarmMissionExpired,
+            onThemeModeChange = themeController::setThemeMode,
+        )
     }
 }
 
@@ -270,8 +258,6 @@ private fun RingoutAppContent(
         }
     }
 }
-
-private const val SplashDurationMillis = 1_200L
 
 private enum class AppScreen {
     Home,
