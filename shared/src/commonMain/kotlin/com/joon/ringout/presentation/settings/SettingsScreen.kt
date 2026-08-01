@@ -37,7 +37,11 @@ fun SettingsScreen(
             .background(colors.background)
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(20.dp),
+            .padding(
+                start = 20.dp,
+                end = 20.dp,
+                bottom = 20.dp,
+            ),
         verticalArrangement = Arrangement.spacedBy(32.dp),
     ) {
         SettingsHeader(onBackClick = onBackClick)

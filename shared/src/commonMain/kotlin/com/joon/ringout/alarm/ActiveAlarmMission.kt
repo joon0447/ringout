@@ -22,6 +22,13 @@ data class ActiveAlarmMission(
     val hasAlarmSoundUri: Boolean = false,
 )
 
+data class ActiveAlarmMissionLocation(
+    val latitude: Double,
+    val longitude: Double,
+    val accuracyMeters: Float,
+    val capturedAtEpochMillis: Long,
+)
+
 internal fun ActiveAlarmMission.isExpiredAt(epochMillis: Long): Boolean =
     expiresAtEpochMillis <= epochMillis
 

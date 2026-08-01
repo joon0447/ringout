@@ -14,8 +14,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.joon.ringout.alarm.ActiveAlarmMission
+import com.joon.ringout.alarm.ActiveAlarmMissionLocation
 import com.joon.ringout.alarm.AlarmScheduleRequest
 import com.joon.ringout.alarm.rememberAlarmController
+import com.joon.ringout.presentation.activemission.ActiveAlarmTrackingScreen
 import com.joon.ringout.presentation.alarmsound.AlarmSoundScreen
 import com.joon.ringout.presentation.alarmsetup.AlarmSoundSelection
 import com.joon.ringout.presentation.alarmsetup.AlarmSetupScreen
@@ -32,6 +34,7 @@ import kotlin.random.Random
 fun App(
     appVersion: String = "",
     activeAlarmMission: ActiveAlarmMission? = null,
+    activeAlarmMissionLocation: ActiveAlarmMissionLocation? = null,
     onActiveAlarmMissionExpired: () -> Unit = {},
 ) {
     val themeController = rememberThemeController()
@@ -43,6 +46,7 @@ fun App(
             themeMode = themeController.themeMode,
             appVersion = appVersion,
             activeAlarmMission = activeAlarmMission,
+            activeAlarmMissionLocation = activeAlarmMissionLocation,
             onActiveAlarmMissionExpired = onActiveAlarmMissionExpired,
             onThemeModeChange = themeController::setThemeMode,
         )
@@ -54,6 +58,7 @@ private fun RingoutAppContent(
     themeMode: ThemeMode,
     appVersion: String,
     activeAlarmMission: ActiveAlarmMission?,
+    activeAlarmMissionLocation: ActiveAlarmMissionLocation?,
     onActiveAlarmMissionExpired: () -> Unit,
     onThemeModeChange: (ThemeMode) -> Unit,
 ) {
@@ -64,6 +69,9 @@ private fun RingoutAppContent(
     var alarmSoundName by rememberSaveable { mutableStateOf(DefaultAlarmSoundName) }
     var alarmSoundUri by rememberSaveable { mutableStateOf<String?>(null) }
     var screenName by rememberSaveable { mutableStateOf(AppScreen.Home.name) }
+    var handledActiveAlarmOccurrenceId by rememberSaveable {
+        mutableStateOf<String?>(null)
+    }
     var editingAlarmId by rememberSaveable { mutableStateOf<String?>(null) }
     var alarms by remember { mutableStateOf<List<HomeAlarm>?>(null) }
     var alarmScheduleError by rememberSaveable { mutableStateOf<String?>(null) }
@@ -77,7 +85,15 @@ private fun RingoutAppContent(
         name = alarmSoundName,
         uri = alarmSoundUri,
     )
-    val screen = AppScreen.valueOf(screenName)
+    val requestedScreen = AppScreen.valueOf(screenName)
+    val screen = if (
+        requestedScreen == AppScreen.ActiveAlarmTracking &&
+        activeAlarmMission == null
+    ) {
+        AppScreen.Home
+    } else {
+        requestedScreen
+    }
     val alarmController = rememberAlarmController(
         onScheduled = { request ->
             val wasEnabled = alarms.orEmpty()
@@ -117,10 +133,21 @@ private fun RingoutAppContent(
         alarmController.ensureFullScreenAccess()
     }
 
-    LaunchedEffect(activeAlarmMission?.expiresAtEpochMillis) {
-        if (activeAlarmMission != null) {
-            editingAlarmId = null
-            screenName = AppScreen.Home.name
+    LaunchedEffect(activeAlarmMission?.occurrenceId) {
+        val occurrenceId = activeAlarmMission?.occurrenceId
+        when {
+            occurrenceId == null -> {
+                handledActiveAlarmOccurrenceId = null
+                if (screenName == AppScreen.ActiveAlarmTracking.name) {
+                    screenName = AppScreen.Home.name
+                }
+            }
+
+            handledActiveAlarmOccurrenceId != occurrenceId -> {
+                handledActiveAlarmOccurrenceId = occurrenceId
+                editingAlarmId = null
+                screenName = AppScreen.Home.name
+            }
         }
     }
 
@@ -183,8 +210,20 @@ private fun RingoutAppContent(
                     alarms = visibleAlarms.filterNot { alarm -> alarm.id == alarmId }
                 }
             },
+            onActiveAlarmMissionClick = {
+                screenName = AppScreen.ActiveAlarmTracking.name
+            },
             onSettingsClick = { screenName = AppScreen.Settings.name },
         )
+
+        AppScreen.ActiveAlarmTracking -> activeAlarmMission?.let { mission ->
+            ActiveAlarmTrackingScreen(
+                mission = mission,
+                currentLocation = activeAlarmMissionLocation,
+                onBackClick = { screenName = AppScreen.Home.name },
+                onExpired = onActiveAlarmMissionExpired,
+            )
+        }
 
         AppScreen.Settings -> SettingsScreen(
             themeMode = themeMode,
@@ -266,6 +305,7 @@ private enum class AppScreen {
     Destination,
     AlarmSound,
     Settings,
+    ActiveAlarmTracking,
 }
 
 private const val DefaultAlarmTime = "06:20"

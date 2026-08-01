@@ -317,6 +317,7 @@ internal fun rememberActiveAlarmMissionRemainingSeconds(
 internal fun ActiveAlarmMissionRow(
     mission: ActiveAlarmMission,
     remainingSeconds: Long,
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(20.dp)
@@ -330,6 +331,11 @@ internal fun ActiveAlarmMissionRow(
             .fillMaxWidth()
             .clip(shape)
             .background(cardColor)
+            .clickable(
+                role = Role.Button,
+                onClickLabel = "진행 중인 알람 지도 열기",
+                onClick = onClick,
+            )
             .semantics(mergeDescendants = true) {
                 contentDescription =
                     "${mission.limitMinutes}분 제한시간, 남은 시간 $countdown, " +

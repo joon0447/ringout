@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import com.joon.ringout.alarm.ActiveAlarmMission
+import com.joon.ringout.alarm.ActiveAlarmMissionLocation
 import com.joon.ringout.alarm.ActiveAlarmMissionStore
 import com.joon.ringout.alarm.AlarmMissionCoordinator
 
@@ -20,9 +21,10 @@ class MainActivity : ComponentActivity() {
     private lateinit var activeAlarmMissionStore: ActiveAlarmMissionStore
     private lateinit var alarmMissionCoordinator: AlarmMissionCoordinator
     private var activeAlarmMission by mutableStateOf<ActiveAlarmMission?>(null)
+    private var activeAlarmMissionLocation by mutableStateOf<ActiveAlarmMissionLocation?>(null)
     private val activeAlarmMissionPreferenceListener =
         SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
-            activeAlarmMission = activeAlarmMissionStore.read()
+            refreshActiveAlarmMission()
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,12 +41,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         activeAlarmMissionStore = ActiveAlarmMissionStore(applicationContext)
         alarmMissionCoordinator = AlarmMissionCoordinator(applicationContext)
-        activeAlarmMission = activeAlarmMissionStore.read()
+        refreshActiveAlarmMission()
 
         setContent {
             App(
                 appVersion = BuildConfig.VERSION_NAME,
                 activeAlarmMission = activeAlarmMission,
+                activeAlarmMissionLocation = activeAlarmMissionLocation,
                 onActiveAlarmMissionExpired = ::handleActiveAlarmMissionExpired,
             )
         }
@@ -57,7 +60,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        activeAlarmMission = activeAlarmMissionStore.read()
+        refreshActiveAlarmMission()
         alarmMissionCoordinator.resumeTracking()
     }
 
@@ -68,6 +71,14 @@ class MainActivity : ComponentActivity() {
 
     private fun handleActiveAlarmMissionExpired() {
         alarmMissionCoordinator.handleDeadline(activeAlarmMission?.occurrenceId)
+    }
+
+    private fun refreshActiveAlarmMission() {
+        val mission = activeAlarmMissionStore.read()
+        activeAlarmMission = mission
+        activeAlarmMissionLocation = mission?.let { activeMission ->
+            activeAlarmMissionStore.readLastLocation(activeMission.occurrenceId)
+        }
     }
 }
 

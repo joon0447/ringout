@@ -30,6 +30,7 @@ internal fun HomeAlarmListState(
     onAlarmEnabledChange: (String, Boolean) -> Unit,
     onAlarmDelete: (String) -> Unit,
     onSettingsClick: () -> Unit,
+    onActiveAlarmMissionClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     activeAlarmMission: ActiveAlarmMission? = null,
     onActiveAlarmMissionExpired: () -> Unit = {},
@@ -83,6 +84,7 @@ internal fun HomeAlarmListState(
                             ActiveAlarmMissionRow(
                                 mission = activeAlarmMission,
                                 remainingSeconds = activeAlarmMissionRemainingSeconds,
+                                onClick = onActiveAlarmMissionClick,
                             )
                         }
                     }

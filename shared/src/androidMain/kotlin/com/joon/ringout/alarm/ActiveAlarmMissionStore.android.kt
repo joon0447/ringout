@@ -229,7 +229,7 @@ class ActiveAlarmMissionStore(context: Context) {
             .apply()
     }
 
-    internal fun readLastLocation(
+    fun readLastLocation(
         occurrenceId: String,
     ): ActiveAlarmMissionLocation? = synchronized(ActiveAlarmMissionStoreLock) {
         if (preferences.getString(KeyOccurrenceId, null) != occurrenceId) {
@@ -321,13 +321,6 @@ internal enum class TerminalTransitionCompletion {
     val isPersistenceConfirmed: Boolean
         get() = this == Persisted
 }
-
-internal data class ActiveAlarmMissionLocation(
-    val latitude: Double,
-    val longitude: Double,
-    val accuracyMeters: Float,
-    val capturedAtEpochMillis: Long,
-)
 
 private fun SharedPreferences.Editor.putDouble(
     key: String,
